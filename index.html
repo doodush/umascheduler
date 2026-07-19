@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UmaScheduler</title>
+  <style>
+  @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=DM+Sans:wght@400;500;700&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'DM Sans',sans-serif;background:#0f1018;color:#e2e8f0;font-size:11px;transition:background 0.3s, color 0.3s}
+  .app{padding:15px 18px 30px}
+
+  /* TOP BAR (Scaled 150%) */
+  .top-bar{display:flex;align-items:center;gap:15px;margin-bottom:15px;flex-wrap:wrap}
+  .logo{font-family:'Rajdhani',sans-serif;font-size:27px;font-weight:700;color:#fff;letter-spacing:.05em}
+  .logo span{color:#4ade80}
+  .spacer{flex:1}
+  .tbtn{padding:8px 20px;border-radius:8px;border:none;font-size:16.5px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:.03em;transition:all 0.2s;text-decoration:none}
+  .tbtn-kofi{background:#29abe0;color:#fff;border:1px solid #1b91c4;display:inline-flex;align-items:center;gap:6px}
+  .tbtn-kofi:hover{background:#1b91c4}
+  .tbtn-cl{background:#312e81;color:#a5b4fc;border:1px solid #4338ca}
+  .tbtn-cl:hover{background:#3730a3}
+  .tbtn-theme{background:#1e2235;color:#cbd5e1;border:1px solid #334155}
+  .tbtn-theme:hover{background:#334155}
+  .tbtn-complete{background:#065f46;color:#a7f3d0;border:1px solid #047857}
+  .tbtn-complete:hover{background:#047857}
+
+  /* TOP BAR STATS */
+  .top-stats{display:flex;align-items:center;gap:18px;background:#161824;border:1px solid #1e2235;border-radius:8px;padding:6px 18px;margin-left:10px;transition:all 0.2s;flex-wrap:wrap}
+  .top-stat{display:flex;align-items:center;gap:6px}
+  .ts-l{font-size:12.5px;font-weight:700;color:#556;text-transform:uppercase;letter-spacing:.05em;transition:color 0.2s}
+  .ts-v{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:#4ade80;line-height:1;transition:color 0.2s}
+
+  /* FILTERS (Scaled 150%) */
+  .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;scrollbar-width:none;-ms-overflow-style:none;}
+  .filters::-webkit-scrollbar{display:none;}
+  .tog{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:6px;border:1px solid #2a2d3e;font-size:15px;font-weight:700;cursor:pointer;background:#161824;color:#555;user-select:none;font-family:'DM Sans',sans-serif;transition:all 0.2s}
+  .tog.on{border-color:transparent}
+  .tog.a-Sprint.on{background:#2d1a6e;color:#c4b5fd}
+  .tog.a-Mile.on{background:#1a3060;color:#93c5fd}
+  .tog.a-Medium.on{background:#14401f;color:#86efac}
+  .tog.a-Long.on{background:#422006;color:#fcd34d}
+  .tog.t-Turf.on{background:#14401f;color:#86efac}
+  .tog.t-Dirt.on{background:#422006;color:#fcd34d}
+  .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .a-Sprint .dot,.tog.a-Sprint.on .dot{background:#a78bfa}
+  .a-Mile .dot,.tog.a-Mile.on .dot{background:#60a5fa}
+  .a-Medium .dot,.tog.a-Medium.on .dot{background:#4ade80}
+  .a-Long .dot,.tog.a-Long.on .dot{background:#fbbf24}
+  .t-Turf .dot{background:#4ade80}.t-Dirt .dot{background:#fbbf24}
+  .tog.t-Turf.on .dot{background:#4ade80}.tog.t-Dirt.on .dot{background:#fbbf24}
+
+  /* TABS ROW & BREAKDOWN BAR */
+  .tabs-row{display:flex;align-items:center;gap:15px;margin-bottom:15px;border-bottom:2px solid #1e2235;padding-bottom:15px;flex-wrap:nowrap;transition:all 0.2s}
+  .tabs{display:flex;gap:8px;overflow-x:auto;flex:1 1 auto;min-width:0;padding-top:10px;padding-bottom:5px;margin-top:-10px;scrollbar-width:none;-ms-overflow-style:none;}
+  .tabs::-webkit-scrollbar{display:none;}
+  .tab-wrapper{position:relative;display:inline-flex;}
+  .tab{padding:8px 18px;border-radius:8px;border:1px solid #2a2d3e;background:#161824;color:#aab;cursor:pointer;font-weight:700;font-family:'DM Sans',sans-serif;font-size:15px;transition:all 0.2s;white-space:nowrap;flex-shrink:0;user-select:none;}
+  .tab.active{background:#3b82f6;color:#fff;border-color:#2563eb}
+  .tab:hover:not(.active):not(.disabled){background:#1e2235;color:#fff}
+  .tab-add{padding:8px 14px;font-weight:900;font-size:18px;line-height:1}
+  .tab-add.disabled{opacity:0.3;cursor:not-allowed;border-color:#2a2d3e;background:#161824;color:#555;}
+
+  .tab-del{position:absolute;top:-8px;right:-8px;background:#ef4444;color:#fff;border-radius:50%;width:20px;height:20px;font-size:12px;font-weight:900;line-height:1;display:none;align-items:center;justify-content:center;cursor:pointer;border:none;z-index:10;box-shadow:0 2px 4px rgba(0,0,0,0.5);transition:transform 0.1s;padding-bottom:2px}
+  .tab-wrapper:hover .tab-del{display:flex}
+  .tab-del:hover{background:#dc2626;transform:scale(1.1)}
+
+  .tab.empty{color:#f59e0b;border-color:#78350f;border-style:dashed}
+  .tab.empty.active{background:#d97706;color:#fff;border-color:#92400e;border-style:solid}
+  .tab.empty:hover:not(.active){background:#451a03;color:#fbbf24}
+
+  /* BREAKDOWN GRID DESIGN */
+  .breakdown-bar{display:flex;gap:10px;flex:0 0 auto;justify-content:flex-end;flex-wrap:wrap;align-items:center}
+  .bd-group{display:grid;grid-template-columns:50px repeat(4, 1fr);gap:12px;align-items:center;justify-items:center;background:#161824;padding:6px 16px;border-radius:8px;border:1px solid #2a2d3e;transition:all 0.2s;max-width:500px}
+  .bd-title{font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;padding:3px 8px;border-radius:4px;color:#000;letter-spacing:0.05em;text-align:center;width:100%}
+  .turf-group .bd-title{background:#4ade80;color:#064e3b}
+  .dirt-group .bd-title{background:#fbbf24;color:#78350f}
+  .bd-item{display:flex;flex-direction:row;align-items:center;justify-content:center;font-size:13px;color:#aab;font-weight:500;transition:color 0.2s;width:100%}
+  .bd-item b{color:#fff;font-size:15.5px;font-weight:700;margin-left:5px;transition:color 0.2s}
+
+  /* YEARS GRID (Scaled 150%) */
+  .years-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .year-col{background:#12141f;border-radius:8px;border:1px solid #1e2235;display:flex;flex-direction:column;transition:all 0.2s}
+  .year-header{padding:10px 15px;display:flex;align-items:center;justify-content:space-between;border-radius:7px 7px 0 0}
+  .yh-1{background:linear-gradient(90deg,#1e3a8a 0%,#1d4ed8 100%)}
+  .yh-2{background:linear-gradient(90deg,#581c87 0%,#7e22ce 100%)}
+  .yh-3{background:linear-gradient(90deg,#14532d 0%,#15803d 100%)}
+  .yh-title{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;letter-spacing:.1em;color:#fff}
+  .yh-count{font-size:15px;font-weight:700;color:rgba(255,255,255,.6)}
+
+  .months-list{padding:9px;display:flex;flex-direction:column;gap:0}
+
+  /* Cards (Fixed size & Scaled 150%) */
+  .month-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4.5px; margin-bottom: 4.5px; }
+  .card{border-radius:8px;padding:8px 8px 6px;height:115px;position:relative;transition:filter .12s,opacity .15s,background 0.2s,border 0.2s;display:flex;flex-direction:column;justify-content:flex-start;overflow:hidden}
+  .card:hover{overflow:visible;z-index:100}
+  .card-empty{background:#161824;border:1px solid #1a1d2c;cursor:default}
+  .card-empty .no-race{font-size:14px;color:#2a2d40;font-weight:700;padding-top:6px;text-align:center}
+  .card-race{background:#1c2040;border:1px solid #2a3060}
+  .card-race:hover{background:#212650;border-color:#3a40a0}
+  .card-done{background:#131520;border:1px solid #1e2030;opacity:.5}
+  
+  .card-disabled{background:#0e1017;border:1px dashed #1e2235;cursor:not-allowed;opacity:0.6}
+  .card-disabled .no-race{font-size:14px;color:#333;font-weight:700;padding-top:6px;text-align:center}
+
+  /* Grade badges */
+  .grade-badge{display:inline-block;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;padding:2px 6px;border-radius:4px;margin-bottom:4px;letter-spacing:.02em}
+  .g1{background:#b45309;color:#fef9c3}
+  .g2{background:#1e40af;color:#bfdbfe}
+  .g3{background:#1f2937;color:#9ca3af}
+
+  .card-name{font-size:14px;font-weight:700;color:#c8d4f0;line-height:1.25;margin-bottom:4px;word-break:break-word;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .card-done .card-name{text-decoration:line-through;color:#334}
+  .card-sub{font-size:12px;color:#3a4060;line-height:1.2}
+  .card-done .card-sub{color:#222}
+
+  .card-tags{display:flex;gap:3px;flex-wrap:wrap}
+  .ctag{font-size:10.5px;font-weight:700;padding:2px 6px;border-radius:3px}
+  .ctag-Sprint{background:#2d1a6e;color:#c4b5fd}
+  .ctag-Mile{background:#1a3060;color:#93c5fd}
+  .ctag-Medium{background:#14401f;color:#86efac}
+  .ctag-Long{background:#422006;color:#fcd34d}
+  .ctag-Turf{background:#14401f;color:#86efac}
+  .ctag-Dirt{background:#422006;color:#fcd34d}
+
+  /* CONFLICT DROPDOWN */
+  .conflict-dropdown{display:none;position:absolute;top:calc(100% - 2px);left:-1px;right:-1px;background:#161824;border:1px solid #4338ca;border-radius:0 0 8px 8px;z-index:110;box-shadow:0 12px 30px rgba(0,0,0,0.85);overflow-y:auto;max-height:180px}
+  .card:hover .conflict-dropdown{display:block}
+  .dropdown-item{padding:7px 10px;font-size:13px;font-weight:700;color:#aab;border-bottom:1px solid #1e2235;cursor:pointer;display:flex;align-items:center;transition:background 0.1s}
+  .dropdown-item:last-child{border-bottom:none}
+  .dropdown-item:hover{background:#1e2235;color:#fff}
+  .dropdown-item.active{background:#212650;color:#4ade80}
+
+  /* BOTTOM TOOLS (Max Consec) */
+  .bottom-tools{margin-top:15px;display:flex;align-items:center;gap:12px;background:#161824;border:1px solid #1e2235;padding:12px 18px;border-radius:8px;flex-wrap:wrap}
+  .btm-lbl{font-weight:700;color:#aab;font-size:14px;display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;}
+  #consec-toggle{width:16px;height:16px;cursor:pointer;accent-color:#4ade80;}
+  .exp-badge{background:#f59e0b;color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:0.05em;font-weight:800;margin-left:4px;}
+  #max-consec{width:60px;padding:6px;border-radius:6px;border:1px solid #2a2d3e;background:#0f1018;color:#4ade80;font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;text-align:center;outline:none;transition:all 0.2s}
+  #max-consec:focus{border-color:#4ade80}
+  .btm-sub{font-size:12px;color:#556}
+
+  /* CHECKLIST MODAL (Scaled 175% Default) */
+  .overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:flex-start;justify-content:center;padding-top:28px}
+  .modal{background:#12141f;border-radius:14px;width:100%;max-width:1050px;max-height:88vh;display:flex;flex-direction:column;border:2px solid #1e2235;box-shadow:0 30px 80px rgba(0,0,0,.8);transition:all 0.2s}
+  .modal-hdr{padding:14px 21px;border-bottom:2px solid #1e2235;display:flex;align-items:center;gap:14px}
+  .modal-title{font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:700;color:#fff;letter-spacing:.05em;flex:1}
+  .close-btn{background:none;border:none;color:#445;font-size:35px;cursor:pointer;line-height:1;padding:0 4px;transition:color 0.2s}
+  .close-btn:hover{color:#aaa}
+  .modal-tools{padding:12px 18px;border-bottom:2px solid #1a1d2c;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .modal-tools input,.modal-tools select{font-size:19px;padding:7px 14px;border:2px solid #2a2d3e;border-radius:7px;background:#161824;color:#aab;font-family:'DM Sans',sans-serif;transition:all 0.2s}
+  .modal-tools input{flex:1;min-width:210px}
+  .smbtn{padding:7px 16px;font-size:17.5px;font-weight:700;background:#161824;border:2px solid #2a2d3e;border-radius:7px;cursor:pointer;color:#778;font-family:'DM Sans',sans-serif;transition:all 0.2s}
+  .smbtn:hover{background:#1e2235}
+  
+  /* IMPORT/EXPORT TEXTAREA AREA */
+  #io-wrap textarea { background: #0f1018; color: #aab; border: 2px solid #2a2d3e; border-radius: 6px; padding: 10px; font-family: monospace; font-size: 14px; resize: vertical; outline: none; }
+  
+  .prog-wrap{padding:10px 21px 5px}
+  .prog-bar{height:5px;background:#1e2235;border-radius:3px;overflow:hidden}
+  .prog-fill{height:100%;background:linear-gradient(90deg,#4ade80,#22d3ee);transition:width .3s}
+  .prog-lbl{font-size:16px;color:#334;font-weight:700;padding:5px 0 8px;text-align:right}
+  .cl-list{overflow-y:auto;flex:1;padding:0 14px 14px}
+  .cl-section{font-size:19px;font-weight:700;color:#334;text-transform:uppercase;letter-spacing:.08em;padding:16px 7px 5px;font-family:'Rajdhani',sans-serif}
+  .cl-sec-badge{padding:3px 8px;border-radius:4px}
+  .cl-item{display:grid;grid-template-columns:31px 31px 1fr 120px 95px 85px;gap:7px;align-items:center;padding:7px;border-radius:8px;cursor:pointer;transition:background 0.1s}
+  .cl-item:hover{background:#161824}
+  .cl-item.ck .ci-name{text-decoration:line-through;color:#334}
+  .ci-cb{width:23px;height:23px;border:2.5px solid #2a3050;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;font-weight:700;background:#0f1018;transition:all 0.2s}
+  .ci-cb.ck{background:#4ade80;border-color:#22c55e;color:#0a1a0a}
+  .ci-name{color:#aab;font-weight:700;font-size:17.5px}
+  .ci-date{color:#334;font-size:16px}
+  .cl-item .grade-badge, .cl-item .ctag{font-size:12px;padding:3px 8px}
+  .cl-empty{font-size:19px;color:#334;padding:2rem}
+
+  /* RESPONSIVE LAYOUT (Max width 1100px) */
+  @media (max-width: 1100px) {
+    .years-grid { grid-template-columns: 1fr; }
+    /* CHECKLIST MODAL (Shrink to 150%) */
+    .overlay { padding-top: 24px; }
+    .modal { max-width: 900px; border-radius: 12px; }
+    .modal-hdr { padding: 12px 18px; }
+    .modal-title { font-size: 22.5px; }
+    .close-btn { font-size: 30px; }
+    .modal-tools { padding: 10px 15px; gap: 7px; }
+    .modal-tools input, .modal-tools select { font-size: 16.5px; padding: 6px 12px; }
+    .smbtn { font-size: 15px; padding: 6px 14px; }
+    .prog-wrap { padding: 9px 18px 4px; }
+    .prog-bar { height: 4.5px; }
+    .prog-lbl { font-size: 13.5px; padding: 4px 0 7px; }
+    .cl-list { padding: 0 12px 12px; }
+    .cl-section { font-size: 16.5px; padding: 14px 6px 4px; }
+    .cl-sec-badge { padding: 3px 6px; }
+    .cl-item { grid-template-columns: 27px 27px 1fr 100px 80px 70px; gap: 6px; padding: 6px; }
+    .ci-cb { width: 20px; height: 20px; font-size: 10.5px; border-width: 2px; }
+    .ci-name { font-size: 15px; }
+    .ci-date { font-size: 13.5px; }
+    .cl-item .grade-badge, .cl-item .ctag { font-size: 10.5px; padding: 3px 6px; }
+    .cl-empty { font-size: 16.5px; }
+    .dropdown-item { font-size: 11.5px; padding: 5px 8px; }
+  }
+
+  /* MOBILE LAYOUT (Max width 768px) */
+  @media (max-width: 768px) {
+    .app { padding: 8px; }
+    .logo { font-size: 22px; width: 100%; text-align: center; margin-bottom: 5px; }
+    .spacer { display: none; }
+    .top-bar { justify-content: center; gap: 8px; margin-bottom: 10px; }
+    .top-stats { width: 100%; justify-content: center; margin-left: 0; gap: 12px; padding: 6px 10px; }
+    .ts-v { font-size: 18px; }
+    .ts-l { font-size: 11.5px; }
+    .tbtn { font-size: 13.5px; padding: 6px 10px; flex: 1; text-align: center; }
+    
+    /* Force Aptitude Filters to stay on one row */
+    .filters { justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; width: 100%; padding-bottom: 4px; }
+    .tog { font-size: 11.5px; padding: 4px 8px; gap: 3px; flex-shrink: 0; }
+    
+    .tabs-row { flex-direction: column; align-items: stretch; padding-bottom: 10px; gap: 10px; }
+    .tabs { width: 100%; padding-bottom: 6px; margin-top: 0; padding-top: 10px; }
+    
+    /* Breakdown Bar Grid Alignment Mobile */
+    .breakdown-bar { flex-direction: column; width: 100%; gap: 6px; justify-content: center; }
+    .bd-group { display: grid; grid-template-columns: 45px repeat(4, 1fr); gap: 4px; padding: 8px; width: 100%; justify-items: center; align-items: center; }
+    .bd-item { flex-direction: column; font-size: 10.5px; width: 100%; justify-content: center; }
+    .bd-item b { margin-left: 0; margin-top: 2px; font-size: 13.5px; }
+
+    /* 4-Column forced on mobile */
+    .month-row { grid-template-columns: repeat(4, 1fr) !important; gap: 4px; }
+    .card { height: 95px; min-height: unset; padding: 4px; border-radius: 6px; }
+    
+    /* Hide track grades and dates for scheduled races */
+    .card-race .card-hdr { display: none !important; }
+    .card-name { font-size: 10.5px !important; margin: auto 0; text-align: center; -webkit-line-clamp: 3; line-height: 1.1; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+    
+    /* Center empty card labels */
+    .card-empty .card-sub { text-align: center; font-size: 9.5px !important; margin-bottom: 2px; line-height: 1; }
+    .card-empty .no-race { font-size: 12px; padding-top: 2px; }
+    .card-disabled .card-sub { text-align: center; font-size: 9.5px !important; margin-bottom: 2px; line-height: 1; }
+    
+    /* Smaller aptitudes */
+    .card-tags { justify-content: center; gap: 2px; margin-bottom: 2px; }
+    .ctag { font-size: 7.5px !important; padding: 1px 3px !important; }
+    .opt-txt { font-size: 8.5px !important; text-align: center; margin-top: 0 !important; }
+    
+    /* Checklist wrapping disabled, hide dates and aptitudes */
+    .cl-item { grid-template-columns: 20px 26px 1fr !important; gap: 6px; padding: 5px; }
+    .ci-date, .ci-apt, .ci-trk { display: none !important; }
+    .ci-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; }
+  }
+
+  /* DAY MODE (LIGHT THEME) - VIBRANT */
+  body.light-theme { background: #f8fafc; color: #0f172a; }
+  body.light-theme .logo { color: #0f172a; }
+  body.light-theme .logo span { color: #2563eb; }
+  body.light-theme .tbtn-theme { background: #e0e7ff; color: #4338ca; border-color: #c7d2fe; }
+  body.light-theme .tbtn-theme:hover { background: #c7d2fe; color: #312e81; }
+  body.light-theme .tbtn-cl { background: #2563eb; color: #ffffff; border-color: #1d4ed8; }
+  body.light-theme .tbtn-cl:hover { background: #1d4ed8; }
+  body.light-theme .tbtn-complete { background: #16a34a; color: #ffffff; border-color: #15803d; }
+  body.light-theme .tbtn-complete:hover { background: #15803d; }
+  body.light-theme .tbtn-kofi { background: #29abe0; color: #ffffff; border-color: #1b91c4; }
+
+  body.light-theme .tabs-row { border-bottom-color: #e2e8f0; }
+  body.light-theme .tab { background: #ffffff; border-color: #cbd5e1; color: #475569; }
+  body.light-theme .tab.active { background: #2563eb; color: #fff; border-color: #1d4ed8; }
+  body.light-theme .tab:hover:not(.active):not(.disabled) { background: #f8fafc; color: #0f172a; border-color: #94a3b8; }
+  body.light-theme .tab.empty { color: #d97706; border-color: #fcd34d; border-style: dashed; }
+  body.light-theme .tab.empty.active { background: #f59e0b; color: #fff; border-color: #d97706; border-style: solid; }
+  body.light-theme .tab.empty:hover:not(.active) { background: #fef3c7; color: #b45309; }
+  body.light-theme .tab-add.disabled { background: #f1f5f9; border-color: #cbd5e1; color: #94a3b8; }
+
+  body.light-theme .top-stats, body.light-theme .bd-group, body.light-theme .year-col, body.light-theme .modal, body.light-theme .modal-tools input, body.light-theme .modal-tools select, body.light-theme .smbtn { background: #ffffff; border-color: #cbd5e1; color: #0f172a; }
+  body.light-theme .bd-item { color: #475569; }
+  body.light-theme .bd-item b { color: #0f172a; }
+
+  body.light-theme .bottom-tools { background: #ffffff; border-color: #cbd5e1; }
+  body.light-theme .btm-lbl { color: #475569; }
+  body.light-theme #max-consec { background: #f8fafc; border-color: #cbd5e1; color: #2563eb; }
+  body.light-theme .btm-sub { color: #94a3b8; }
+
+  /* Vibrant Filters */
+  body.light-theme .tog { background: #ffffff; border-color: #cbd5e1; color: #64748b; }
+  body.light-theme .tog.a-Sprint.on { background: #f3e8ff; color: #7e22ce; border-color: #d8b4fe; }
+  body.light-theme .tog.a-Mile.on { background: #dbeafe; color: #1d4ed8; border-color: #bfdbfe; }
+  body.light-theme .tog.a-Medium.on { background: #dcfce7; color: #15803d; border-color: #86efac; }
+  body.light-theme .tog.a-Long.on { background: #fef3c7; color: #b45309; border-color: #fde68a; }
+  body.light-theme .tog.t-Turf.on { background: #dcfce7; color: #15803d; border-color: #86efac; }
+  body.light-theme .tog.t-Dirt.on { background: #fef3c7; color: #b45309; border-color: #fde68a; }
+
+  /* Vibrant UI elements in Cards */
+  body.light-theme .g1 { background: #f59e0b; color: #ffffff; }
+  body.light-theme .g2 { background: #3b82f6; color: #ffffff; }
+  body.light-theme .g3 { background: #64748b; color: #ffffff; }
+  body.light-theme .ctag-Sprint { background: #e9d5ff; color: #7e22ce; } 
+  body.light-theme .ctag-Mile { background: #bfdbfe; color: #1d4ed8; }   
+  body.light-theme .ctag-Medium { background: #bbf7d0; color: #15803d; } 
+  body.light-theme .ctag-Long { background: #fde68a; color: #b45309; }   
+  body.light-theme .ctag-Turf { background: #bbf7d0; color: #15803d; }
+  body.light-theme .ctag-Dirt { background: #fde68a; color: #b45309; }
+
+  body.light-theme .ts-v { color: #2563eb; }
+  body.light-theme .ts-l, body.light-theme .card-sub, body.light-theme .ci-date, body.light-theme .prog-lbl, body.light-theme .cl-section { color: #475569; }
+  body.light-theme .card-empty { background: #f1f5f9; border-color: #e2e8f0; }
+  body.light-theme .card-empty .no-race { color: #94a3b8; }
+  body.light-theme .card-disabled { background: #f1f5f9; border-color: #cbd5e1; }
+  body.light-theme .card-race { background: #ffffff; border-color: #cbd5e1; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+  body.light-theme .card-race:hover { background: #f8fafc; border-color: #3b82f6; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+  body.light-theme .card-name { color: #0f172a; }
+  body.light-theme .card-done { background: #f1f5f9; border-color: #cbd5e1; opacity: 0.6; }
+  body.light-theme .card-done .card-name { color: #64748b; }
+  body.light-theme .card-done .card-sub { color: #94a3b8; }
+  body.light-theme .conflict-dropdown { background: #ffffff; border-color: #3b82f6; box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
+  body.light-theme .dropdown-item { color: #0f172a; border-bottom-color: #e2e8f0; }
+  body.light-theme .dropdown-item:hover { background: #eff6ff; color: #1d4ed8; }
+  body.light-theme .dropdown-item.active { background: #dbeafe; color: #2563eb; }
+  body.light-theme .modal-hdr, body.light-theme .modal-tools { border-bottom-color: #e2e8f0; }
+  body.light-theme .modal-title, body.light-theme .ci-name { color: #0f172a; }
+  body.light-theme .close-btn { color: #64748b; }
+  body.light-theme .close-btn:hover { color: #0f172a; }
+  body.light-theme .ci-cb { background: #ffffff; border-color: #94a3b8; }
+  body.light-theme .ci-cb.ck { background: #3b82f6; border-color: #2563eb; color: #ffffff; }
+  body.light-theme .cl-item:hover { background: #f1f5f9; }
+  body.light-theme .cl-empty { color: #475569; }
+  body.light-theme .prog-bar { background: #e2e8f0; }
+  body.light-theme .prog-fill { background: linear-gradient(90deg, #3b82f6, #06b6d4); }
+  body.light-theme .smbtn:hover { background: #f1f5f9; border-color: #94a3b8; }
+  body.light-theme #io-wrap textarea { background: #f8fafc; color: #0f172a; border-color: #cbd5e1; }
+  </style>
+</head>
+<body>
+
+<div class="app">
+  <div class="top-bar">
+    <div class="logo">UMA<span>SCHEDULER</span></div>
+    
+    <div class="top-stats">
+      <div class="top-stat"><span class="ts-l">G1:</span><span class="ts-v" id="sv-g1">0/0</span></div>
+      <div class="top-stat"><span class="ts-l">G2:</span><span class="ts-v" id="sv-g2">0/0</span></div>
+      <div class="top-stat"><span class="ts-l">G3:</span><span class="ts-v" id="sv-g3">0/0</span></div>
+      <div class="top-stat"><span class="ts-l">Total:</span><span class="ts-v" id="sv-tot">0/0</span></div>
+    </div>
+
+    <div class="spacer"></div>
+    <a href="https://ko-fi.com/doodush" target="_blank" class="tbtn tbtn-kofi">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 7.324-.022 11.822c.164 2.424 2.586 2.672 2.586 2.672s8.267-.023 11.966-.049c2.438-.426 2.683-2.566 2.658-3.734 4.352.24 7.422-2.831 6.649-6.916zm-11.062 3.511c-1.246 1.453-4.011 3.976-4.011 3.976s-.121.119-.31.023c-.076-.057-.108-.09-.108-.09-.443-.441-3.368-3.049-4.034-3.954-.709-.965-1.041-2.7-.091-3.71.951-1.01 3.005-1.086 4.363.407 0 0 1.565-1.782 3.468-.963 1.904.82 1.832 3.011.723 4.311zm6.173.478c-.928.116-1.682.028-1.682.028V7.284h1.77s1.971.551 1.971 2.638c0 1.913-.985 2.667-2.059 3.015z" fill="currentColor"/></svg>
+      Support me
+    </a>
+    <button class="tbtn tbtn-theme" id="theme-btn" onclick="toggleTheme()">Light Mode</button>
+    <div class="filters">
+      <div class="tog a-Sprint on" data-f="apt" data-v="Sprint" onclick="tf(this)"><span class="dot"></span>Sprint</div>
+      <div class="tog a-Mile on" data-f="apt" data-v="Mile" onclick="tf(this)"><span class="dot"></span>Mile</div>
+      <div class="tog a-Medium on" data-f="apt" data-v="Medium" onclick="tf(this)"><span class="dot"></span>Medium</div>
+      <div class="tog a-Long on" data-f="apt" data-v="Long" onclick="tf(this)"><span class="dot"></span>Long</div>
+      <div class="tog t-Turf on" data-f="track" data-v="Turf" onclick="tf(this)"><span class="dot"></span>Turf</div>
+      <div class="tog t-Dirt on" data-f="track" data-v="Dirt" onclick="tf(this)"><span class="dot"></span>Dirt</div>
+    </div>
+    <button class="tbtn tbtn-complete" onclick="completeSchedule()">Complete schedule</button>
+    <button class="tbtn tbtn-cl" onclick="openCL()">Checklist</button>
+  </div>
+
+  <div class="tabs-row">
+    <div class="tabs" id="tabs-container">
+      <!-- Populated dynamically via JS -->
+    </div>
+    <div class="breakdown-bar" id="breakdown-bar">
+      <div class="bd-group turf-group">
+        <span class="bd-title">TURF</span>
+        <span class="bd-item">Sprint: <b id="bd-turf-Sprint">0</b></span>
+        <span class="bd-item">Mile: <b id="bd-turf-Mile">0</b></span>
+        <span class="bd-item">Medium: <b id="bd-turf-Medium">0</b></span>
+        <span class="bd-item">Long: <b id="bd-turf-Long">0</b></span>
+      </div>
+      <div class="bd-group dirt-group">
+        <span class="bd-title">DIRT</span>
+        <span class="bd-item">Sprint: <b id="bd-dirt-Sprint">0</b></span>
+        <span class="bd-item">Mile: <b id="bd-dirt-Mile">0</b></span>
+        <span class="bd-item">Medium: <b id="bd-dirt-Medium">0</b></span>
+        <span class="bd-item">Long: <b id="bd-dirt-Long">0</b></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="years-grid">
+    <div class="year-col"><div class="year-header yh-1"><span class="yh-title">JUNIOR</span><span class="yh-count" id="yc-1"></span></div><div class="months-list" id="col-1"></div></div>
+    <div class="year-col"><div class="year-header yh-2"><span class="yh-title">CLASSIC</span><span class="yh-count" id="yc-2"></span></div><div class="months-list" id="col-2"></div></div>
+    <div class="year-col"><div class="year-header yh-3"><span class="yh-title">SENIOR</span><span class="yh-count" id="yc-3"></span></div><div class="months-list" id="col-3"></div></div>
+  </div>
+  
+  <div class="bottom-tools" id="btm-tools">
+    <label class="btm-lbl">
+      <input type="checkbox" id="consec-toggle" onchange="saveMaxConsec(); toggleMaxConsecUI(); renderAll()">
+      Enable Max Consecutive Races
+      <span class="exp-badge">Experimental</span>
+    </label>
+    <input type="number" id="max-consec" min="1" max="20" placeholder="∞" onchange="saveMaxConsec(); renderAll()" style="display:none;">
+    <span class="btm-sub" id="consec-sub" style="display:none;">(Restricts the auto-scheduler. Manual overrides bypass this limit.)</span>
+  </div>
+</div>
+
+<div class="overlay" id="overlay" style="display:none" onclick="clOutside(event)">
+  <div class="modal">
+    <div class="modal-hdr">
+      <span class="modal-title">Race Checklist</span>
+      <button class="close-btn" onclick="closeCL()">×</button>
+    </div>
+    <div class="modal-tools">
+      <input type="text" id="cl-q" placeholder="Search..." oninput="renderCL()"/>
+      <select id="cl-fa" onchange="renderCL()"><option value="">All aptitudes</option><option>Sprint</option><option>Mile</option><option>Medium</option><option>Long</option></select>
+      <select id="cl-ft" onchange="renderCL()"><option value="">All tracks</option><option>Turf</option><option>Dirt</option></select>
+      <select id="cl-fg" onchange="renderCL()"><option value="">All grades</option><option value="G1">G1</option><option value="G2">G2</option><option value="G3">G3</option></select>
+      <button class="smbtn" onclick="markAll(false)">Clear all</button>
+      <button class="smbtn" onclick="markAll(true)">All done</button>
+      <button class="smbtn" onclick="prepExport()">Export</button>
+      <button class="smbtn" onclick="prepImport()">Import</button>
+    </div>
+    
+    <div id="io-wrap" style="display:none; padding:10px 18px; border-bottom: 2px solid #1a1d2c;">
+      <textarea id="io-txt" rows="4" style="width:100%; padding:8px; border-radius:6px; background:#0f1018; color:#e2e8f0; border:2px solid #2a2d3e; font-family:monospace; resize:vertical; font-size:14px; outline:none;"></textarea>
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
+        <button class="smbtn" onclick="execCopy()" id="io-copy-btn">Copy to Clipboard</button>
+        <button class="smbtn" style="background:#065f46; border-color:#047857; color:#a7f3d0" onclick="execImport()" id="io-apply-btn">Apply Import</button>
+        <button class="smbtn" onclick="document.getElementById('io-wrap').style.display='none'">Cancel</button>
+      </div>
+    </div>
+
+    <div class="prog-wrap">
+      <div class="prog-bar"><div class="prog-fill" id="pf" style="width:0%"></div></div>
+      <div class="prog-lbl" id="pl">0 / 135</div>
+    </div>
+    <div class="cl-list" id="cl-list"></div>
+  </div>
+</div>
+
+<script>
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const SL_LBL=['Early','Late'];
+
+const RAW_CSV=`G1,3,2,2,February Stakes,Dirt,Mile
+G1,3,3,2,Takamatsunomiya Kinen,Turf,Sprint
+G1,3,3,2,Osaka Hai,Turf,Medium
+G1,2,4,1,Oka Sho,Turf,Mile
+G1,2,4,1,Satsuki Sho,Turf,Medium
+G1,3,4,2,Tenno Sho (Spring),Turf,Long
+G1,2,5,1,NHK Mile Cup,Turf,Mile
+G1,3,5,1,Victoria Mile,Turf,Mile
+G1,2,5,2,Japanese Oaks,Turf,Medium
+G1,2,5,2,Japanese Derby,Turf,Medium
+G1,23,6,1,Yasuda Kinen,Turf,Mile
+G1,23,6,2,Takarazuka Kinen,Turf,Mile
+G1,23,9,2,Sprinters Stakes,Turf,Sprint
+G1,2,10,2,Shuka Sho,Turf,Medium
+G1,2,10,2,Kikuka Sho,Turf,Long
+G1,23,10,2,Tenno Sho (Autumn),Turf,Medium
+G1,23,11,1,Queen Elizabeth II Cup,Turf,Medium
+G1,23,11,2,Mile Championship,Turf,Mile
+G1,23,11,2,Japan Cup,Turf,Medium
+G1,23,12,1,Champions Cup,Dirt,Mile
+G1,1,12,1,Hanshin Juvenile Fillies,Turf,Mile
+G1,1,12,1,Asahi Hai Futurity Stakes,Turf,Mile
+G1,23,12,2,Arima Kinen,Turf,Long
+G1,1,12,2,Hopeful Stakes,Turf,Medium
+G1,23,12,2,Tokyo Daitoshen,Dirt,Medium
+G1,23,11,1,JBC Classic,Dirt,Medium
+G1,23,11,1,JBC Sprint,Dirt,Sprint
+G1,23,11,1,JBC Ladies Classic,Dirt,Mile
+G1,2,7,1,Japan Dirt Derby,Dirt,Medium
+G1,3,6,2,Teio Sho,Dirt,Medium
+G1,3,2,1,Kawasaki Kinen,Dirt,Medium
+G1,1,12,2,Zen-Nippon Junior Yushun,Dirt,Mile
+G1,3,5,1,Kashiwa Kinen,Dirt,Mile
+G1,23,10,1,Mile Championship Nambu Hai,Dirt,Mile
+G2,3,1,1,Nikkei Shinshun Hai,Turf,Medium
+G2,3,1,2,Tokai Stakes,Dirt,Mile
+G2,3,1,2,American JCC,Turf,Medium
+G2,3,2,1,Kyoto Kinen,Turf,Medium
+G2,3,2,2,Nakayama Kinen,Turf,Mile
+G2,2,3,1,Tulip Sho,Turf,Mile
+G2,2,3,1,Yayoi Sho,Turf,Medium
+G2,3,3,1,Kinko Sho,Turf,Medium
+G2,2,3,1,Fillies' Revue,Turf,Sprint
+G2,3,3,2,Hanshin Daishoten,Turf,Long
+G2,2,3,2,Spring Stakes,Turf,Mile
+G2,3,3,2,Nikkei Sho,Turf,Long
+G2,3,4,1,Hanshin Umamusume Stakes,Turf,Mile
+G2,2,4,1,New Zealand Trophy,Turf,Mile
+G2,3,4,2,Milers Cup,Turf,Mile
+G2,2,4,2,Flora Stakes,Turf,Medium
+G2,2,4,2,Aoba Sho,Turf,Medium
+G2,2,5,1,Kyoto Shimbun Hai,Turf,Medium
+G2,3,5,1,Keio Hai Spring Cup,Turf,Sprint
+G2,3,5,2,Meguro Kinen,Turf,Long
+G2,23,8,2,Sapporo Kinen,Turf,Medium
+G2,23,9,1,Centaur Stakes,Turf,Sprint
+G2,2,9,1,Rose Stakes,Turf,Mile
+G2,2,9,2,St. Lite Kinen,Turf,Medium
+G2,2,9,2,Kobe Shimbun Hai,Turf,Medium
+G2,23,9,2,All Comers,Turf,Medium
+G2,23,10,1,Mainichi Okan,Turf,Mile
+G2,23,10,1,Kyoto Daishoten,Turf,Medium
+G2,23,10,1,Fuchu Umamusume Stakes,Turf,Mile
+G2,23,10,2,Fuji Stakes,Turf,Mile
+G2,23,10,2,Swan Stakes,Turf,Sprint
+G2,1,11,1,Keio Hai Junior Stakes,Turf,Sprint
+G2,23,11,1,Republica Argentina,Turf,Long
+G2,1,11,1,Daily Hai Junior Stakes,Turf,Mile
+G2,23,12,1,Stayers Stakes,Turf,Long
+G2,23,12,2,Hanshin Cup,Turf,Sprint
+G2,23,10,1,Ladies' Prelude,Dirt,Mile
+G2,23,10,1,Tokyo Hai,Dirt,Sprint
+G2,3,3,1,Empress Hai,Dirt,Medium
+G2,2,6,1,Kanto Oaks,Dirt,Medium
+G2,3,3,2,Diolite Kinen,Dirt,Medium
+G2,23,9,2,Sazanka TV Hai,Dirt,Mile
+G3,3,1,1,Kyoto Kimpai,Turf,Mile
+G3,3,1,1,Nakayama Kimpai,Turf,Medium
+G3,2,1,1,Shinzan Kinen,Turf,Mile
+G3,2,1,1,Fairy Stakes,Turf,Mile
+G3,3,1,1,Aichi Hai,Turf,Medium
+G3,2,1,1,Keisei Hai,Turf,Medium
+G3,3,1,2,Silk Road Stakes,Turf,Sprint
+G3,3,1,2,Negishi Stakes,Dirt,Sprint
+G3,2,2,1,Kisaragi Sho,Turf,Mile
+G3,3,2,1,Tokyo Shimbun Hai,Turf,Mile
+G3,2,2,1,Queen Cup,Turf,Mile
+G3,2,2,1,Kyodo News Hai,Turf,Mile
+G3,3,2,2,Kyoto Umamusume Stakes,Turf,Sprint
+G3,3,2,2,Diamond Stakes,Turf,Long
+G3,3,2,2,Kokura Daishoten,Turf,Mile
+G3,2,4,1,Arlington Cup,Turf,Mile
+G3,3,2,2,Hankyu Hai,Turf,Sprint
+G3,3,3,1,Ocean Stakes,Turf,Sprint
+G3,3,3,1,Nakayama Umamusume Stakes,Turf,Mile
+G3,2,3,2,Falcon Stakes,Turf,Sprint
+G3,2,3,2,Flower Cup,Turf,Mile
+G3,2,3,2,Mainichi Hai,Turf,Mile
+G3,3,3,2,March Stakes,Dirt,Mile
+G3,3,4,1,Lord Derby Challenge Trophy,Turf,Mile
+G3,3,4,1,Antares Stakes,Dirt,Mile
+G3,3,4,2,Fukushima Umamusume Stakes,Turf,Mile
+G3,3,5,1,Niigata Daishoten,Turf,Medium
+G3,3,5,2,Heian Stakes,Dirt,Medium
+G3,2,5,2,Aoi Stakes,Turf,Sprint
+G3,23,6,1,Naruo Kinen,Turf,Medium
+G3,23,6,1,Mermaid Stakes,Turf,Medium
+G3,23,6,1,Epsom Cup,Turf,Mile
+G3,2,6,2,Unicorn Stakes,Dirt,Mile
+G3,23,6,2,Hakodate Sprint Stakes,Turf,Sprint
+G3,23,7,1,CBC Sho,Turf,Sprint
+G3,2,7,1,Radio Nikkei Sho,Turf,Mile
+G3,23,7,1,Procyon Stakes,Dirt,Sprint
+G3,23,7,1,Tanabata Sho,Turf,Medium
+G3,23,7,1,Hakodate Kinen,Turf,Medium
+G3,23,7,2,Chukyo Kinen,Turf,Mile
+G3,1,7,2,Hakodate Junior Stakes,Turf,Sprint
+G3,23,7,2,Ibis Summer Dash,Turf,Sprint
+G3,23,7,2,Queen Stakes,Turf,Mile
+G3,23,8,1,Kokura Kinen,Turf,Medium
+G3,2,8,1,Leopard Stakes,Dirt,Mile
+G3,23,8,1,Sekiya Kinen,Turf,Mile
+G3,23,8,1,Elm Stakes,Dirt,Mile
+G3,23,8,2,Kitakyushu Kinen,Turf,Sprint
+G3,1,8,2,Niigata Junior Stakes,Turf,Mile
+G3,23,8,2,Keeneland Cup,Turf,Sprint
+G3,1,9,1,Sapporo Junior Stakes,Turf,Mile
+G3,1,9,1,Kokura Junior Stakes,Turf,Sprint
+G3,23,9,1,Niigata Kinen,Turf,Medium
+G3,2,9,1,Shion Stakes,Turf,Medium
+G3,23,9,1,Keisei Hai Autumn Handicap,Turf,Mile
+G3,23,9,2,Sirius Stakes,Dirt,Medium
+G3,1,10,1,Saudi Arabia Royal Cup,Turf,Mile
+G3,1,10,2,Artemis Stakes,Turf,Mile
+G3,1,11,1,Fantasy Stakes,Turf,Sprint
+G3,23,11,1,Miyako Stakes,Dirt,Mile
+G3,23,11,1,Musashino Stakes,Dirt,Mile
+G3,23,11,1,Fukushima Kinen,Turf,Medium
+G3,1,11,2,Tokyo Sports Hai Junior Stakes,Turf,Mile
+G3,1,11,2,Kyoto Junior Stakes,Turf,Medium
+G3,2,11,2,Keihan Hai,Turf,Sprint
+G3,23,12,1,Challenge Cup,Turf,Medium
+G3,23,12,1,Chunichi Shimbun Hai,Turf,Medium
+G3,23,12,1,Capella Stakes,Dirt,Sprint
+G3,23,12,1,Turquoise Stakes,Turf,Mile
+G3,3,1,2,TCK Jo-o Hai,Dirt,Mile
+G3,23,4,2,Tokyo Sprint,Dirt,Sprint
+G3,23,7,1,Sparking Lady Cup,Dirt,Medium
+G3,23,4,1,Marine Cup,Dirt,Mile
+G3,23,12,1,Queen Sho,Dirt,Mile
+G3,23,7,2,Mercury Cup,Dirt,Medium
+G3,23,8,2,Cluster Cup,Dirt,Sprint`;
+
+// Parse races using text name as unique ID 
+let races=[];
+let insertOrder=0;
+for(const line of RAW_CSV.trim().split('\n')){
+  const parts=line.split(',');
+  const grade=parts[0].trim();
+  const yrRaw=parts[1].trim();
+  const month=parseInt(parts[2]);
+  const slot=parseInt(parts[3]);
+  const name=parts[4].trim();
+  const track=parts[5].trim();
+  const apt=parts[6].trim();
+  const multi=yrRaw==='23';
+  const fixedYear=multi?null:parseInt(yrRaw);
+  
+  // Safe string ID
+  const id = name.replace(/[^a-zA-Z0-9]/g, '');
+  races.push({id,grade,month,slot,name,track,apt,multi,fixedYear,insertOrder:insertOrder++});
+}
+
+// Generate an ultra-compact 5-char Hash Dictionary to massively shrink export strings
+const exportMap = {}; 
+const importMap = {};
+for (const r of races) {
+  let h = 0x811c9dc5;
+  for(let i=0; i<r.id.length; i++) {
+    h ^= r.id.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  let s = (h >>> 0).toString(36).padStart(7,'0').substring(0,5);
+  while (importMap[s] && importMap[s] !== r.id) {
+    s = (parseInt(s, 36) + 1).toString(36).padStart(5,'0').substring(0,5);
+  }
+  importMap[s] = r.id;
+  exportMap[r.id] = s;
+}
+
+// Global Storage Keys
+const DONE_KEY='uma_done_v3';
+const PATHS_KEY='uma_paths_v3';
+const CURRENT_PATH_KEY='uma_curr_path_v3';
+const THEME_KEY='uma_theme_v1';
+const MAX_CONSEC_KEY='uma_max_consec_v1';
+const MAX_CONSEC_TOGGLE_KEY='uma_max_consec_toggle_v1';
+
+let done=new Set();
+
+// Default paths object
+let paths = {
+  1: { apt: ['Sprint','Mile','Medium','Long'], track: ['Turf','Dirt'], overrides: {} },
+  2: { apt: ['Sprint','Mile','Medium','Long'], track: ['Turf','Dirt'], overrides: {} },
+  3: { apt: ['Sprint','Mile','Medium','Long'], track: ['Turf','Dirt'], overrides: {} }
+};
+let currentPath = 1;
+
+let activeApt=new Set();
+let activeTrack=new Set();
+let selectedOverrides={};
+let isLightMode = false;
+
+let pathRaceCounts = {};
+
+function toggleTheme() {
+  isLightMode = !isLightMode;
+  document.body.classList.toggle('light-theme', isLightMode);
+  document.getElementById('theme-btn').textContent = isLightMode ? 'Dark Mode' : 'Light Mode';
+  try { localStorage.setItem(THEME_KEY, isLightMode); } catch(e) {}
+}
+
+function loadTheme() {
+  try {
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved === 'true') {
+      isLightMode = true;
+      document.body.classList.add('light-theme');
+      document.getElementById('theme-btn').textContent = 'Dark Mode';
+    } else {
+      document.getElementById('theme-btn').textContent = 'Light Mode';
+    }
+  } catch(e) {}
+}
+
+function saveMaxConsec() {
+  try {
+    localStorage.setItem(MAX_CONSEC_KEY, document.getElementById('max-consec').value);
+    localStorage.setItem(MAX_CONSEC_TOGGLE_KEY, document.getElementById('consec-toggle').checked);
+  } catch(e) {}
+}
+
+function toggleMaxConsecUI() {
+  const isChecked = document.getElementById('consec-toggle').checked;
+  document.getElementById('max-consec').style.display = isChecked ? 'inline-block' : 'none';
+  document.getElementById('consec-sub').style.display = isChecked ? 'inline' : 'none';
+}
+
+async function loadDone(){
+  try{
+    const r=localStorage.getItem(DONE_KEY);
+    if(r){
+      const arr=JSON.parse(r);
+      done=new Set(arr);
+    }
+  }catch(e){done=new Set();}
+}
+
+async function saveDone(){
+  try{
+    localStorage.setItem(DONE_KEY,JSON.stringify([...done]));
+  }catch(e){}
+}
+
+function loadPaths() {
+  try {
+    const savedMax = localStorage.getItem(MAX_CONSEC_KEY);
+    if (savedMax) document.getElementById('max-consec').value = savedMax;
+    
+    const savedToggle = localStorage.getItem(MAX_CONSEC_TOGGLE_KEY);
+    if (savedToggle === 'true') document.getElementById('consec-toggle').checked = true;
+    toggleMaxConsecUI();
+    
+    const savedPaths = localStorage.getItem(PATHS_KEY);
+    if (savedPaths) {
+      paths = JSON.parse(savedPaths);
+    } 
+    if (!paths || Object.keys(paths).length === 0) {
+      paths = { 1: { apt: ['Sprint','Mile','Medium','Long'], track: ['Turf','Dirt'], overrides: {} } };
+    }
+    const savedCurr = localStorage.getItem(CURRENT_PATH_KEY);
+    if (savedCurr && paths[savedCurr]) currentPath = parseInt(savedCurr);
+  } catch(e) {}
+  
+  applyPath();
+}
+
+function savePaths() {
+  paths[currentPath].apt = [...activeApt];
+  paths[currentPath].track = [...activeTrack];
+  paths[currentPath].overrides = selectedOverrides;
+  
+  try {
+    localStorage.setItem(PATHS_KEY, JSON.stringify(paths));
+    localStorage.setItem(CURRENT_PATH_KEY, currentPath);
+  } catch(e) {}
+}
+
+function renderTabs() {
+  const container = document.getElementById('tabs-container');
+  let html = '';
+  const sortedPaths = Object.keys(paths).map(Number).sort((a,b)=>a-b);
+  
+  for (let pid of sortedPaths) {
+    const isActive = (pid === currentPath) ? 'active' : '';
+    const isEmpty = (pathRaceCounts[pid] === 0) ? 'empty' : ''; 
+    
+    html += `<div class="tab-wrapper">
+               <button class="tab ${isActive} ${isEmpty}" onclick="if(window.isDragging)return; switchPath(${pid})">Plan ${pid}</button>`;
+    
+    if (sortedPaths.length > 1) {
+      html += `<button class="tab-del" onclick="if(window.isDragging)return; deletePath(${pid}, event)" title="Delete Plan">×</button>`;
+    }
+    html += `</div>`;
+  }
+  
+  // Disable adding new plans if NO MORE RACES CAN BE SCHEDULED
+  if (window.allRacesConsumed) {
+    html += `<button class="tab tab-add disabled" disabled title="No more races can be scheduled">+</button>`;
+  } else {
+    html += `<button class="tab tab-add" onclick="if(window.isDragging)return; addPath()">+</button>`;
+  }
+  
+  container.innerHTML = html;
+}
+
+function switchPath(id) {
+  if (currentPath === id) return;
+  savePaths();
+  currentPath = id;
+  applyPath();
+  renderAll();
+}
+
+function addPath() {
+  savePaths();
+  const sortedPaths = Object.keys(paths).map(Number).sort((a,b)=>a-b);
+  const newId = sortedPaths[sortedPaths.length - 1] + 1;
+  paths[newId] = { apt: ['Sprint','Mile','Medium','Long'], track: ['Turf','Dirt'], overrides: {} };
+  try { localStorage.setItem(PATHS_KEY, JSON.stringify(paths)); } catch(e) {}
+  switchPath(newId);
+}
+
+function executePathDeletion(pid) {
+  const sortedPaths = Object.keys(paths).map(Number).sort((a,b)=>a-b);
+  let newPaths = {};
+  let newId = 1;
+  let newCurrentPath = currentPath;
+
+  for (let oldId of sortedPaths) {
+    if (oldId === pid) continue;
+    newPaths[newId] = paths[oldId];
+    if (oldId === currentPath && currentPath !== pid) {
+      newCurrentPath = newId; 
+    }
+    newId++;
+  }
+
+  if (Object.keys(newPaths).length === 0) {
+    newPaths[1] = { apt: ['Sprint','Mile','Medium','Long'], track: ['Turf','Dirt'], overrides: {} };
+    newCurrentPath = 1;
+  } else if (currentPath === pid) {
+    newCurrentPath = (pid > 1) ? (pid - 1) : 1;
+  }
+
+  paths = newPaths;
+  currentPath = newCurrentPath;
+  applyPath();
+  savePaths();
+  renderAll();
+}
+
+function deletePath(pid, event) {
+  if (event) event.stopPropagation();
+  const sortedPaths = Object.keys(paths).map(Number).sort((a,b)=>a-b);
+  if (sortedPaths.length <= 1) return; 
+
+  executePathDeletion(pid);
+}
+
+function applyPath() {
+  const p = paths[currentPath];
+  activeApt = new Set(p.apt);
+  activeTrack = new Set(p.track);
+  selectedOverrides = p.overrides || {};
+
+  document.querySelectorAll('.tog').forEach(el => {
+    const f = el.dataset.f, v = el.dataset.v;
+    const s = f === 'apt' ? activeApt : activeTrack;
+    if (s.has(v)) el.classList.add('on');
+    else el.classList.remove('on');
+  });
+}
+
+function tf(el){
+  const f=el.dataset.f,v=el.dataset.v;
+  const s=f==='apt'?activeApt:activeTrack;
+  if(s.has(v)){if(s.size===1)return;s.delete(v);el.classList.remove('on')}
+  else{s.add(v);el.classList.add('on')}
+  
+  for (let k in selectedOverrides) {
+    let rid = selectedOverrides[k];
+    if (rid !== 'none') {
+       let r = races.find(x => x.id === rid);
+       if (r && (!activeApt.has(r.apt) || !activeTrack.has(r.track))) {
+          delete selectedOverrides[k];
+       }
+    }
+  }
+  
+  savePaths();
+  renderAll();
+}
+
+/* =======================================================
+   NEW LIGHTWEIGHT COMPRESSION EXPORT ENGINE
+======================================================= */
+function prepExport() {
+  const dStr = [...done].map(id => exportMap[id] || '').join('');
+  
+  const pArr = [];
+  const sortedPaths = Object.keys(paths).map(Number).sort((a,b)=>a-b);
+  for (let pid of sortedPaths) {
+    let a = paths[pid].apt.map(x => x === 'Medium' ? 'E' : x[0]).join(''); 
+    let t = paths[pid].track.map(x => x[0]).join('');
+    pArr.push(`${pid}:${a}|${t}`); 
+  }
+  
+  const data = {
+    d: dStr,
+    p: pArr.join(';'),
+    c: currentPath,
+    mc: document.getElementById('max-consec').value,
+    mt: document.getElementById('consec-toggle').checked
+  };
+  
+  const str = btoa(JSON.stringify(data));
+  const wrap = document.getElementById('io-wrap');
+  const txt = document.getElementById('io-txt');
+  
+  wrap.style.display = 'block';
+  txt.value = str;
+  txt.readOnly = true;
+  document.getElementById('io-copy-btn').style.display = 'inline-block';
+  document.getElementById('io-apply-btn').style.display = 'none';
+}
+
+function prepImport() {
+  const wrap = document.getElementById('io-wrap');
+  const txt = document.getElementById('io-txt');
+  
+  wrap.style.display = 'block';
+  txt.value = '';
+  txt.readOnly = false;
+  txt.placeholder = 'Paste short save string here...';
+  document.getElementById('io-copy-btn').style.display = 'none';
+  document.getElementById('io-apply-btn').style.display = 'inline-block';
+}
+
+function execCopy() {
+  const txt = document.getElementById('io-txt');
+  txt.select();
+  document.execCommand('copy');
+  alert('Copied to clipboard!');
+}
+
+async function execImport() {
+  let str = document.getElementById('io-txt').value;
+  if (!str) return;
+  try {
+    str = str.trim().replace(/\s/g, ''); 
+    const data = JSON.parse(atob(str));
+    
+    if (data.d !== undefined) {
+      done = new Set();
+      for (let i = 0; i < data.d.length; i += 5) {
+        let h = data.d.substring(i, i+5);
+        if (importMap[h]) done.add(importMap[h]);
+      }
+    }
+    
+    if (data.p) {
+       const newPaths = {};
+       const pArr = data.p.split(';');
+       pArr.forEach((x, index) => {
+         let pid = index + 1;
+         let filterStr = x;
+         if (x.includes(':')) {
+           const parts = x.split(':');
+           pid = parseInt(parts[0]);
+           filterStr = parts[1];
+         }
+         
+         let parts = filterStr.split('|');
+         let aRaw = parts[0] || '';
+         let tRaw = parts[1] || '';
+         newPaths[pid] = {
+           apt: aRaw.split('').map(y => y==='S'?'Sprint' : y==='M'?'Mile' : y==='E'?'Medium' : 'Long'),
+           track: tRaw.split('').map(y => y==='T'?'Turf' : 'Dirt'),
+           overrides: {} 
+         };
+       });
+       paths = newPaths;
+    }
+    
+    if (data.mc !== undefined) {
+      document.getElementById('max-consec').value = data.mc;
+      document.getElementById('consec-toggle').checked = !!data.mt;
+      saveMaxConsec();
+      toggleMaxConsecUI();
+    }
+    
+    if (data.c && paths[data.c]) currentPath = data.c;
+    else currentPath = Object.keys(paths).length > 0 ? Number(Object.keys(paths)[0]) : 1;
+    
+    selectedOverrides = {}; 
+
+    await saveDone();
+    
+    // Reverse sync order: Apply the newly parsed filters BEFORE triggering a save
+    applyPath(); 
+    savePaths();
+    
+    renderAll();
+    if (document.getElementById('overlay').style.display !== 'none') renderCL();
+    document.getElementById('io-wrap').style.display = 'none';
+    
+    alert("Import successful!");
+  } catch(e) {
+    alert("Failed to import. Invalid save string.");
+  }
+}
+
+async function completeSchedule() {
+  const schedules = computeAllSchedules();
+  const sm = schedules[currentPath];
+  const scheduledIds = [];
+  
+  for(let y=1; y<=3; y++) {
+    for(let m=1; m<=12; m++) {
+      for(let s=1; s<=2; s++) {
+        const k = `${y}-${m}-${s}`;
+        const opts = sm[k];
+        if (opts && opts.length > 0 && selectedOverrides[k] !== 'none') {
+          const candidate = opts[0];
+          if (selectedOverrides[k] === candidate.id || !candidate.multi || candidate.targetYear === y) {
+            scheduledIds.push(candidate.id);
+          }
+        }
+      }
+    }
+  }
+
+  if (scheduledIds.length === 0) {
+    alert("No unscheduled races are currently visible in the schedule.");
+    return;
+  }
+  
+  if (confirm(`Are you sure you want to mark the ${scheduledIds.length} races currently displayed in the schedule as completed? This will also remove this Plan.`)) {
+    scheduledIds.forEach(id => done.add(id));
+    await saveDone();
+    
+    executePathDeletion(currentPath);
+    if (document.getElementById('overlay').style.display !== 'none') renderCL();
+  }
+}
+
+function selectRace(slotKey, raceId) {
+  if (raceId !== 'none') {
+    const r = races.find(x => x.id === raceId);
+    if (r && r.multi) {
+      const parts = slotKey.split('-');
+      const y = parseInt(parts[0]);
+      const otherY = y === 2 ? 3 : 2;
+      const otherKey = `${otherY}-${parts[1]}-${parts[2]}`;
+      if (selectedOverrides[otherKey] === raceId) {
+         delete selectedOverrides[otherKey];
+      }
+    }
+    
+    for (let pid in paths) {
+      if (parseInt(pid) !== currentPath) {
+        for (let key in paths[pid].overrides) {
+          if (paths[pid].overrides[key] === raceId) {
+            delete paths[pid].overrides[key];
+          }
+        }
+      }
+    }
+  }
+
+  selectedOverrides[slotKey] = raceId;
+  savePaths();
+  renderAll();
+}
+
+function computeAllSchedules() {
+  let globalConsumed = new Set(done);
+  let schedules = {}; 
+  
+  let explicitReservations = {};
+  for (let pid in paths) {
+    let pOverrides = paths[pid].overrides || {};
+    for (let k in pOverrides) {
+      let raceId = pOverrides[k];
+      if (raceId !== 'none') {
+        const r = races.find(x => x.id === raceId);
+        let pApt = new Set(paths[pid].apt || []);
+        let pTrack = new Set(paths[pid].track || []);
+        
+        if (r && pApt.has(r.apt) && pTrack.has(r.track)) {
+           if (explicitReservations[raceId] === undefined) {
+             explicitReservations[raceId] = parseInt(pid);
+           }
+        }
+      }
+    }
+  }
+
+  const sortedPaths = Object.keys(paths).map(Number).sort((a,b)=>a-b);
+  
+  let currentBreakdownCounts = {
+    'Turf': { 'Sprint': 0, 'Mile': 0, 'Medium': 0, 'Long': 0 },
+    'Dirt': { 'Sprint': 0, 'Mile': 0, 'Medium': 0, 'Long': 0 }
+  };
+  
+  let isConsecEnabled = document.getElementById('consec-toggle')?.checked;
+  let maxConsec = isConsecEnabled ? parseInt(document.getElementById('max-consec')?.value) : 999;
+  if (isNaN(maxConsec) || maxConsec < 1) maxConsec = 999;
+  
+  for (let pid of sortedPaths) {
+    let pApt = new Set(paths[pid].apt || []);
+    let pTrack = new Set(paths[pid].track || []);
+    let pOverrides = paths[pid].overrides || {};
+    
+    if (pid === currentPath) {
+      for (const r of races) {
+        if (!globalConsumed.has(r.id) && (explicitReservations[r.id] === undefined || explicitReservations[r.id] === pid)) {
+          if (currentBreakdownCounts[r.track] && currentBreakdownCounts[r.track][r.apt] !== undefined) {
+             currentBreakdownCounts[r.track][r.apt]++;
+          }
+        }
+      }
+    }
+
+    let pAvailable = races.filter(r => 
+      !globalConsumed.has(r.id) && 
+      (explicitReservations[r.id] === undefined || explicitReservations[r.id] === pid) &&
+      pApt.has(r.apt) && 
+      pTrack.has(r.track)
+    );
+    
+    let sm = computePlanSchedule(pAvailable, pOverrides);
+    schedules[pid] = sm;
+    
+    let assignedIds = new Set();
+    let consec = 0;
+    
+    for(let y=1; y<=3; y++){
+      for(let m=1; m<=12; m++){
+        for(let s=1; s<=2; s++){
+          let k = `${y}-${m}-${s}`;
+          let picked = false;
+          
+          if (sm[k] && sm[k].length > 0 && pOverrides[k] !== 'none') {
+            const candidate = sm[k][0];
+            if (pOverrides[k] === candidate.id || !candidate.multi || candidate.targetYear === y) {
+              const isOverride = (pOverrides[k] === candidate.id);
+              if (consec < maxConsec || isOverride) {
+                assignedIds.add(candidate.id);
+                globalConsumed.add(candidate.id);
+                picked = true;
+              }
+            }
+          }
+          
+          if (picked) consec++; else consec = 0;
+        }
+      }
+    }
+    
+    pathRaceCounts[pid] = assignedIds.size;
+  }
+  
+  window.lastCalculatedBreakdown = currentBreakdownCounts;
+  window.allRacesConsumed = (globalConsumed.size >= races.length);
+  return schedules;
+}
+
+function computePlanSchedule(availableRaces, overrides){
+  const sm = {};
+  
+  for(let y=1; y<=3; y++){
+    for(let m=1; m<=12; m++){
+      for(let s=1; s<=2; s++){
+        sm[`${y}-${m}-${s}`] = [];
+      }
+    }
+  }
+  
+  const fixed = availableRaces.filter(r => !r.multi);
+  for(const r of fixed){
+    sm[`${r.fixedYear}-${r.month}-${r.slot}`].push(r);
+  }
+  
+  const multi = availableRaces.filter(r => r.multi);
+  multi.sort((a,b) => a.grade.localeCompare(b.grade) || a.insertOrder - b.insertOrder);
+  
+  for(const r of multi){
+    const k2 = `2-${r.month}-${r.slot}`;
+    const k3 = `3-${r.month}-${r.slot}`;
+    
+    let targetYear = 2;
+    if (overrides[k2] === r.id) targetYear = 2;
+    else if (overrides[k3] === r.id) targetYear = 3;
+    else {
+      let c2 = sm[k2].filter(x => !x.multi || x.targetYear === 2).length;
+      let c3 = sm[k3].filter(x => !x.multi || x.targetYear === 3).length;
+      if (c2 > c3) targetYear = 3;
+      else targetYear = 2;
+    }
+    
+    sm[k2].push({...r, targetYear});
+    sm[k3].push({...r, targetYear});
+  }
+  
+  for (const k in sm) {
+    const y = parseInt(k.split('-')[0]);
+    sm[k].sort((a, b) => {
+      const aOverride = overrides[k] === a.id;
+      const bOverride = overrides[k] === b.id;
+      if (aOverride && !bOverride) return -1;
+      if (!aOverride && bOverride) return 1;
+
+      const aTarget = !a.multi || a.targetYear === y;
+      const bTarget = !b.multi || b.targetYear === y;
+      if (aTarget && !bTarget) return -1;
+      if (!aTarget && bTarget) return 1;
+
+      return a.grade.localeCompare(b.grade) || a.insertOrder - b.insertOrder;
+    });
+  }
+  
+  return sm;
+}
+
+function renderAll(){
+  const schedules = computeAllSchedules();
+  renderTabs(); 
+  const sm = schedules[currentPath];
+  
+  let isConsecEnabled = document.getElementById('consec-toggle')?.checked;
+  let maxConsec = isConsecEnabled ? parseInt(document.getElementById('max-consec')?.value) : 999;
+  if (isNaN(maxConsec) || maxConsec < 1) maxConsec = 999;
+  
+  let g1T=0, g1D=0, g2T=0, g2D=0, g3T=0, g3D=0;
+  for (const r of races) {
+    const isD = done.has(r.id);
+    if (r.grade === 'G1') { g1T++; if (isD) g1D++; }
+    else if (r.grade === 'G2') { g2T++; if (isD) g2D++; }
+    else if (r.grade === 'G3') { g3T++; if (isD) g3D++; }
+  }
+  document.getElementById('sv-g1').textContent = `${g1D}/${g1T}`;
+  document.getElementById('sv-g2').textContent = `${g2D}/${g2T}`;
+  document.getElementById('sv-g3').textContent = `${g3D}/${g3T}`;
+  document.getElementById('sv-tot').textContent = `${done.size}/${races.length}`;
+
+  let consec = 0;
+  for(let y=1;y<=3;y++){
+    let html='';
+    let ycount=0;
+
+    for(let mi=0;mi<12;mi+=2){
+      const m1=mi+1, m2=mi+2;
+      html+=`<div class="month-row">`;
+      for(const mm of[m1,m2]){
+        for(let s=1;s<=2;s++){
+          const k=`${y}-${mm}-${s}`;
+          const opts=sm[k]||[];
+          
+          let mainRace = null;
+          if (opts.length > 0 && selectedOverrides[k] !== 'none') {
+            const candidate = opts[0];
+            if (selectedOverrides[k] === candidate.id || !candidate.multi || candidate.targetYear === y) {
+              mainRace = candidate;
+            }
+          }
+          
+          if (mainRace) {
+            const isOverride = (selectedOverrides[k] === mainRace.id);
+            if (!isOverride && consec >= maxConsec) {
+              mainRace = null; // Auto-scheduler is blocked due to consecutive limits
+            }
+          }
+          
+          if (mainRace) {
+             consec++;
+             ycount++;
+          } else {
+             consec = 0;
+          }
+          
+          html+=renderCard(mm, s, opts, k, mainRace, y);
+        }
+      }
+      html+=`</div>`;
+    }
+    document.getElementById('col-'+y).innerHTML=html;
+    document.getElementById('yc-'+y).textContent=ycount+' race'+(ycount!==1?'s':'');
+  }
+
+  const breakdown = window.lastCalculatedBreakdown;
+  document.getElementById('bd-turf-Sprint').textContent = breakdown['Turf']['Sprint'];
+  document.getElementById('bd-turf-Mile').textContent = breakdown['Turf']['Mile'];
+  document.getElementById('bd-turf-Medium').textContent = breakdown['Turf']['Medium'];
+  document.getElementById('bd-turf-Long').textContent = breakdown['Turf']['Long'];
+
+  document.getElementById('bd-dirt-Sprint').textContent = breakdown['Dirt']['Sprint'];
+  document.getElementById('bd-dirt-Mile').textContent = breakdown['Dirt']['Mile'];
+  document.getElementById('bd-dirt-Medium').textContent = breakdown['Dirt']['Medium'];
+  document.getElementById('bd-dirt-Long').textContent = breakdown['Dirt']['Long'];
+}
+
+function renderCard(m, s, opts, slotKey, mainRace, y){
+  const label=`${SL_LBL[s-1]} ${MONTHS[m-1]}`;
+  
+  // Disable Early Junior Year Slots
+  const isJuniorDisabled = (y === 1 && (m < 7 || (m === 7 && s === 1)));
+  if (isJuniorDisabled) {
+    return `<div class="card card-disabled">
+      <div class="card-sub" style="font-size:12px;color:#736c6c;font-weight:700">${label}</div>
+      <div class="no-race">—</div>
+    </div>`;
+  }
+  
+  if(!opts.length){
+    return`<div class="card card-empty">
+      <div class="card-sub" style="font-size:12px;color:#736c6c;font-weight:700">${label}</div>
+      <div class="no-race">—</div>
+    </div>`;
+  }
+  
+  const isNone = selectedOverrides[slotKey] === 'none';
+
+  let items = opts.map(o => {
+    const isActive = mainRace && o.id === mainRace.id;
+    return `<div class="dropdown-item ${isActive ? 'active' : ''}" onclick="event.stopPropagation(); selectRace('${slotKey}', '${o.id}')">
+      <span class="grade-badge g${o.grade[1].toLowerCase()}" style="font-size:10px;padding:1px 4px;margin:0 6px 0 0">${o.grade}</span>
+      ${o.name}
+    </div>`;
+  }).join('');
+  
+  items += `<div class="dropdown-item ${isNone ? 'active' : ''}" style="color:#ef4444" onclick="event.stopPropagation(); selectRace('${slotKey}', 'none')">
+    <span style="margin-left:4px">❌ Remove Race</span>
+  </div>`;
+  
+  let dropdownHtml = `<div class="conflict-dropdown">${items}</div>`;
+
+  if (!mainRace) {
+    return `<div class="card card-empty" style="overflow:visible">
+      <div class="card-sub" style="font-size:12px;color:#736c6c;font-weight:700">${label}</div>
+      <div class="no-race">—</div>
+      <div class="opt-txt" style="font-size:10.5px;color:#3b82f6;font-weight:700;margin-top:auto;text-align:center">${opts.length} option${opts.length>1?'s':''} ▾</div>
+      ${dropdownHtml}
+    </div>`;
+  }
+
+  const r = mainRace;
+  const extra = opts.length - 1;
+  const gn = r.grade[1].toLowerCase();
+  
+  let actionText = '';
+  if (extra > 0) {
+    actionText = `<div class="opt-txt" style="font-size:10.5px;color:#f97316;font-weight:700;margin-top:3px">+${extra} option${extra>1?'s':''} ▾</div>`;
+  } else {
+    actionText = `<div class="opt-txt" style="font-size:10.5px;color:#64748b;font-weight:700;margin-top:3px">Options ▾</div>`;
+  }
+
+  return`<div class="card card-race">
+    <div class="card-hdr" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+      <div class="grade-badge g${gn}">${r.grade}</div>
+      <div class="card-sub" style="font-size:12px">${label}</div>
+    </div>
+    <div class="card-name" title="${r.name}">${r.name}</div>
+    <div style="margin-top:auto">
+      <div class="card-tags">
+        <span class="ctag ctag-${r.apt}">${r.apt}</span>
+        <span class="ctag ctag-${r.track}">${r.track}</span>
+      </div>
+      ${actionText}
+    </div>
+    ${dropdownHtml}
+  </div>`;
+}
+
+function openCL(){document.getElementById('overlay').style.display='flex';renderCL();}
+function closeCL(){document.getElementById('overlay').style.display='none';}
+function clOutside(e){if(e.target.id==='overlay')closeCL();}
+
+function renderCL(){
+  const q=(document.getElementById('cl-q').value||'').toLowerCase();
+  const fa=document.getElementById('cl-fa').value;
+  const ft=document.getElementById('cl-ft').value;
+  const fg=document.getElementById('cl-fg').value;
+  let vis=races.filter(r=>{
+    if(q&&!r.name.toLowerCase().includes(q))return false;
+    if(fa&&r.apt!==fa)return false;
+    if(ft&&r.track!==ft)return false;
+    if(fg&&r.grade!==fg)return false;
+    return true;
+  });
+  const total=vis.length,dv=vis.filter(r=>done.has(r.id)).length;
+  document.getElementById('pf').style.width=total?Math.round(dv/total*100)+'%':'0%';
+  document.getElementById('pl').textContent=`${dv} / ${total} completed`;
+  vis.sort((a,b)=>a.grade.localeCompare(b.grade)||a.insertOrder-b.insertOrder);
+  let html='';let lastG='';
+  for(const r of vis){
+    if(r.grade!==lastG){
+      const gClass = r.grade.toLowerCase();
+      html+=`<div class="cl-section"><span class="cl-sec-badge ${gClass}">${r.grade}</span></div>`;
+      lastG=r.grade;
+    }
+    const ck=done.has(r.id);
+    const yrLabel=r.multi?`${MONTHS[r.month-1]} ${SL_LBL[r.slot-1]} (Y2/3)`:r.fixedYear?`Y${r.fixedYear} ${MONTHS[r.month-1]} ${SL_LBL[r.slot-1]}`:'';
+    html+=`<div class="cl-item${ck?' ck':''}" onclick="clToggle('${r.id}')">
+      <div class="ci-cb${ck?' ck':''}">${ck?'✓':''}</div>
+      <span class="grade-badge g${r.grade[1].toLowerCase()}">${r.grade}</span>
+      <span class="ci-name">${r.name}</span>
+      <span class="ci-date">${yrLabel}</span>
+      <span class="ci-apt"><span class="ctag ctag-${r.apt}">${r.apt}</span></span>
+      <span class="ci-trk"><span class="ctag ctag-${r.track}">${r.track}</span></span>
+    </div>`;
+  }
+  document.getElementById('cl-list').innerHTML=html||'<div class="cl-empty">No races match.</div>';
+}
+
+async function clToggle(id){
+  if(done.has(id))done.delete(id);else done.add(id);
+  await saveDone();
+  renderCL();
+  renderAll();
+}
+
+async function markAll(v){
+  for(const r of races){if(v)done.add(r.id);else done.delete(r.id);}
+  await saveDone();
+  renderCL();
+  renderAll();
+}
+
+function setupDragScroll() {
+  const slider = document.getElementById('tabs-container');
+  let isDown = false;
+  let startX;
+  let scrollLeft;
+  window.isDragging = false;
+
+  slider.addEventListener('mousedown', (e) => {
+    isDown = true;
+    window.isDragging = false;
+    slider.style.cursor = 'grabbing';
+    startX = e.pageX - slider.offsetLeft;
+    scrollLeft = slider.scrollLeft;
+  });
+  slider.addEventListener('mouseleave', () => {
+    isDown = false;
+    slider.style.cursor = '';
+  });
+  slider.addEventListener('mouseup', () => {
+    isDown = false;
+    slider.style.cursor = '';
+  });
+  slider.addEventListener('mousemove', (e) => {
+    if (!isDown) return;
+    e.preventDefault();
+    const x = e.pageX - slider.offsetLeft;
+    const walk = (x - startX) * 1.5; // Drag speed multiplier
+    if (Math.abs(walk) > 3) window.isDragging = true; 
+    slider.scrollLeft = scrollLeft - walk;
+  });
+  
+  // Intercept and stop accidental button clicks when intentionally dragging
+  slider.addEventListener('click', (e) => {
+    if (window.isDragging) {
+      e.preventDefault();
+      e.stopPropagation();
+      window.isDragging = false; 
+    }
+  }, true); 
+}
+
+// Init
+(async()=>{
+  try {
+    loadTheme();
+    await loadDone();
+    loadPaths();
+    setupDragScroll();
+    renderAll();
+  } catch (err) {
+    console.error("Initialization failed, resetting to defaults:", err);
+    localStorage.clear();
+    location.reload();
+  }
+})();
+</script>
+</body>
+</html>
