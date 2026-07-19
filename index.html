@@ -15,7 +15,7 @@
   .logo{font-family:'Rajdhani',sans-serif;font-size:27px;font-weight:700;color:#fff;letter-spacing:.05em}
   .logo span{color:#4ade80}
   .spacer{flex:1}
-  .tbtn{padding:8px 20px;border-radius:8px;border:none;font-size:16.5px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:.03em;transition:all 0.2s;text-decoration:none}
+  .tbtn{padding:8px 20px;border-radius:8px;border:none;font-size:16.5px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:.03em;transition:all 0.2s;text-decoration:none;white-space:nowrap;}
   .tbtn-kofi{background:#29abe0;color:#fff;border:1px solid #1b91c4;display:inline-flex;align-items:center;gap:6px}
   .tbtn-kofi:hover{background:#1b91c4}
   .tbtn-cl{background:#312e81;color:#a5b4fc;border:1px solid #4338ca}
@@ -24,9 +24,13 @@
   .tbtn-theme:hover{background:#334155}
   .tbtn-complete{background:#065f46;color:#a7f3d0;border:1px solid #047857}
   .tbtn-complete:hover{background:#047857}
+  
+  /* IMPORT/EXPORT BUTTON */
+  .tbtn-io{background:#1e2235;color:#aab;border:1px solid #2a2d3e;}
+  .tbtn-io:hover{background:#2a2d3e;color:#fff;}
 
   /* TOP BAR STATS */
-  .top-stats{display:flex;align-items:center;gap:18px;background:#161824;border:1px solid #1e2235;border-radius:8px;padding:6px 18px;margin-left:10px;transition:all 0.2s;flex-wrap:wrap}
+  .top-stats{display:flex;align-items:center;gap:18px;background:#161824;border:1px solid #1e2235;border-radius:8px;padding:6px 18px;transition:all 0.2s;flex-wrap:wrap}
   .top-stat{display:flex;align-items:center;gap:6px}
   .ts-l{font-size:12.5px;font-weight:700;color:#556;text-transform:uppercase;letter-spacing:.05em;transition:color 0.2s}
   .ts-v{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:#4ade80;line-height:1;transition:color 0.2s}
@@ -140,21 +144,24 @@
   #max-consec:focus{border-color:#4ade80}
   .btm-sub{font-size:12px;color:#556}
 
-  /* CHECKLIST MODAL (Scaled 175% Default) */
+  /* MODAL BASICS (Scaled 175% Default) */
   .overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:flex-start;justify-content:center;padding-top:28px}
   .modal{background:#12141f;border-radius:14px;width:100%;max-width:1050px;max-height:88vh;display:flex;flex-direction:column;border:2px solid #1e2235;box-shadow:0 30px 80px rgba(0,0,0,.8);transition:all 0.2s}
   .modal-hdr{padding:14px 21px;border-bottom:2px solid #1e2235;display:flex;align-items:center;gap:14px}
   .modal-title{font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:700;color:#fff;letter-spacing:.05em;flex:1}
   .close-btn{background:none;border:none;color:#445;font-size:35px;cursor:pointer;line-height:1;padding:0 4px;transition:color 0.2s}
   .close-btn:hover{color:#aaa}
+  
+  /* CHECKLIST TOOLS */
   .modal-tools{padding:12px 18px;border-bottom:2px solid #1a1d2c;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
   .modal-tools input,.modal-tools select{font-size:19px;padding:7px 14px;border:2px solid #2a2d3e;border-radius:7px;background:#161824;color:#aab;font-family:'DM Sans',sans-serif;transition:all 0.2s}
   .modal-tools input{flex:1;min-width:210px}
   .smbtn{padding:7px 16px;font-size:17.5px;font-weight:700;background:#161824;border:2px solid #2a2d3e;border-radius:7px;cursor:pointer;color:#778;font-family:'DM Sans',sans-serif;transition:all 0.2s}
   .smbtn:hover{background:#1e2235}
   
-  /* IMPORT/EXPORT TEXTAREA AREA */
-  #io-wrap textarea { background: #0f1018; color: #aab; border: 2px solid #2a2d3e; border-radius: 6px; padding: 10px; font-family: monospace; font-size: 14px; resize: vertical; outline: none; }
+  /* IMPORT/EXPORT MODAL STYLING */
+  #io-txt { width: 100%; box-sizing: border-box; background: #0f1018; color: #aab; border: 2px solid #2a2d3e; border-radius: 6px; padding: 10px; font-family: monospace; font-size: 14px; resize: vertical; outline: none; }
+  .io-help-txt { font-size: 14px; color: #aab; margin-bottom: 10px; font-weight: 500; }
   
   .prog-wrap{padding:10px 21px 5px}
   .prog-bar{height:5px;background:#1e2235;border-radius:3px;overflow:hidden}
@@ -259,6 +266,9 @@
   body.light-theme .tbtn-complete { background: #16a34a; color: #ffffff; border-color: #15803d; }
   body.light-theme .tbtn-complete:hover { background: #15803d; }
   body.light-theme .tbtn-kofi { background: #29abe0; color: #ffffff; border-color: #1b91c4; }
+  
+  body.light-theme .tbtn-io { background: #ffffff; color: #475569; border-color: #cbd5e1; }
+  body.light-theme .tbtn-io:hover { background: #f8fafc; color: #0f172a; border-color: #94a3b8; }
 
   body.light-theme .tabs-row { border-bottom-color: #e2e8f0; }
   body.light-theme .tab { background: #ffffff; border-color: #cbd5e1; color: #475569; }
@@ -324,7 +334,8 @@
   body.light-theme .prog-bar { background: #e2e8f0; }
   body.light-theme .prog-fill { background: linear-gradient(90deg, #3b82f6, #06b6d4); }
   body.light-theme .smbtn:hover { background: #f1f5f9; border-color: #94a3b8; }
-  body.light-theme #io-wrap textarea { background: #f8fafc; color: #0f172a; border-color: #cbd5e1; }
+  body.light-theme #io-txt { background: #f8fafc; color: #0f172a; border-color: #cbd5e1; }
+  body.light-theme .io-help-txt { color: #475569; }
   </style>
 </head>
 <body>
@@ -332,6 +343,11 @@
 <div class="app">
   <div class="top-bar">
     <div class="logo">UMA<span>SCHEDULER</span></div>
+    <button class="tbtn tbtn-theme" id="theme-btn" onclick="toggleTheme()">Light Mode</button>
+    <a href="https://ko-fi.com/doodush" target="_blank" class="tbtn tbtn-kofi">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 7.324-.022 11.822c.164 2.424 2.586 2.672 2.586 2.672s8.267-.023 11.966-.049c2.438-.426 2.683-2.566 2.658-3.734 4.352.24 7.422-2.831 6.649-6.916zm-11.062 3.511c-1.246 1.453-4.011 3.976-4.011 3.976s-.121.119-.31.023c-.076-.057-.108-.09-.108-.09-.443-.441-3.368-3.049-4.034-3.954-.709-.965-1.041-2.7-.091-3.71.951-1.01 3.005-1.086 4.363.407 0 0 1.565-1.782 3.468-.963 1.904.82 1.832 3.011.723 4.311zm6.173.478c-.928.116-1.682.028-1.682.028V7.284h1.77s1.971.551 1.971 2.638c0 1.913-.985 2.667-2.059 3.015z" fill="currentColor"/></svg>
+      Support me
+    </a>
     
     <div class="top-stats">
       <div class="top-stat"><span class="ts-l">G1:</span><span class="ts-v" id="sv-g1">0/0</span></div>
@@ -341,11 +357,7 @@
     </div>
 
     <div class="spacer"></div>
-    <a href="https://ko-fi.com/doodush" target="_blank" class="tbtn tbtn-kofi">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 7.324-.022 11.822c.164 2.424 2.586 2.672 2.586 2.672s8.267-.023 11.966-.049c2.438-.426 2.683-2.566 2.658-3.734 4.352.24 7.422-2.831 6.649-6.916zm-11.062 3.511c-1.246 1.453-4.011 3.976-4.011 3.976s-.121.119-.31.023c-.076-.057-.108-.09-.108-.09-.443-.441-3.368-3.049-4.034-3.954-.709-.965-1.041-2.7-.091-3.71.951-1.01 3.005-1.086 4.363.407 0 0 1.565-1.782 3.468-.963 1.904.82 1.832 3.011.723 4.311zm6.173.478c-.928.116-1.682.028-1.682.028V7.284h1.77s1.971.551 1.971 2.638c0 1.913-.985 2.667-2.059 3.015z" fill="currentColor"/></svg>
-      Support me
-    </a>
-    <button class="tbtn tbtn-theme" id="theme-btn" onclick="toggleTheme()">Light Mode</button>
+    
     <div class="filters">
       <div class="tog a-Sprint on" data-f="apt" data-v="Sprint" onclick="tf(this)"><span class="dot"></span>Sprint</div>
       <div class="tog a-Mile on" data-f="apt" data-v="Mile" onclick="tf(this)"><span class="dot"></span>Mile</div>
@@ -354,7 +366,8 @@
       <div class="tog t-Turf on" data-f="track" data-v="Turf" onclick="tf(this)"><span class="dot"></span>Turf</div>
       <div class="tog t-Dirt on" data-f="track" data-v="Dirt" onclick="tf(this)"><span class="dot"></span>Dirt</div>
     </div>
-    <button class="tbtn tbtn-complete" onclick="completeSchedule()">Complete schedule</button>
+    
+    <button class="tbtn tbtn-io" onclick="openIO()">Import/Export</button>
     <button class="tbtn tbtn-cl" onclick="openCL()">Checklist</button>
   </div>
 
@@ -362,6 +375,7 @@
     <div class="tabs" id="tabs-container">
       <!-- Populated dynamically via JS -->
     </div>
+    
     <div class="breakdown-bar" id="breakdown-bar">
       <div class="bd-group turf-group">
         <span class="bd-title">TURF</span>
@@ -378,6 +392,8 @@
         <span class="bd-item">Long: <b id="bd-dirt-Long">0</b></span>
       </div>
     </div>
+    
+    <button class="tbtn tbtn-complete" onclick="completeSchedule()">Complete schedule</button>
   </div>
 
   <div class="years-grid">
@@ -397,6 +413,7 @@
   </div>
 </div>
 
+<!-- CHECKLIST MODAL -->
 <div class="overlay" id="overlay" style="display:none" onclick="clOutside(event)">
   <div class="modal">
     <div class="modal-hdr">
@@ -410,17 +427,6 @@
       <select id="cl-fg" onchange="renderCL()"><option value="">All grades</option><option value="G1">G1</option><option value="G2">G2</option><option value="G3">G3</option></select>
       <button class="smbtn" onclick="markAll(false)">Clear all</button>
       <button class="smbtn" onclick="markAll(true)">All done</button>
-      <button class="smbtn" onclick="prepExport()">Export</button>
-      <button class="smbtn" onclick="prepImport()">Import</button>
-    </div>
-    
-    <div id="io-wrap" style="display:none; padding:10px 18px; border-bottom: 2px solid #1a1d2c;">
-      <textarea id="io-txt" rows="4" style="width:100%; padding:8px; border-radius:6px; background:#0f1018; color:#e2e8f0; border:2px solid #2a2d3e; font-family:monospace; resize:vertical; font-size:14px; outline:none;"></textarea>
-      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
-        <button class="smbtn" onclick="execCopy()" id="io-copy-btn">Copy to Clipboard</button>
-        <button class="smbtn" style="background:#065f46; border-color:#047857; color:#a7f3d0" onclick="execImport()" id="io-apply-btn">Apply Import</button>
-        <button class="smbtn" onclick="document.getElementById('io-wrap').style.display='none'">Cancel</button>
-      </div>
     </div>
 
     <div class="prog-wrap">
@@ -428,6 +434,24 @@
       <div class="prog-lbl" id="pl">0 / 135</div>
     </div>
     <div class="cl-list" id="cl-list"></div>
+  </div>
+</div>
+
+<!-- IMPORT/EXPORT MODAL -->
+<div class="overlay" id="io-overlay" style="display:none" onclick="ioOutside(event)">
+  <div class="modal" style="max-width: 600px; max-height: none;">
+    <div class="modal-hdr">
+      <span class="modal-title">Import / Export Data</span>
+      <button class="close-btn" onclick="closeIO()">×</button>
+    </div>
+    <div style="padding:20px;">
+      <div class="io-help-txt">Copy the text below to export your data, or paste a save string and click "Import" to load.</div>
+      <textarea id="io-txt" rows="6"></textarea>
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:15px;">
+        <button class="smbtn" onclick="execCopy()" id="io-copy-btn">Copy to clipboard</button>
+        <button class="smbtn" style="background:#065f46; border-color:#047857; color:#a7f3d0" onclick="execImport()" id="io-apply-btn">Import</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -751,7 +775,6 @@ function renderTabs() {
     html += `</div>`;
   }
   
-  // Disable adding new plans if NO MORE RACES CAN BE SCHEDULED
   if (window.allRacesConsumed) {
     html += `<button class="tab tab-add disabled" disabled title="No more races can be scheduled">+</button>`;
   } else {
@@ -850,9 +873,9 @@ function tf(el){
 }
 
 /* =======================================================
-   NEW LIGHTWEIGHT COMPRESSION EXPORT ENGINE
+   NEW LIGHTWEIGHT COMPRESSION EXPORT ENGINE & UNIFIED MODAL
 ======================================================= */
-function prepExport() {
+function openIO() {
   const dStr = [...done].map(id => exportMap[id] || '').join('');
   
   const pArr = [];
@@ -872,26 +895,19 @@ function prepExport() {
   };
   
   const str = btoa(JSON.stringify(data));
-  const wrap = document.getElementById('io-wrap');
   const txt = document.getElementById('io-txt');
   
-  wrap.style.display = 'block';
+  document.getElementById('io-overlay').style.display = 'flex';
   txt.value = str;
-  txt.readOnly = true;
-  document.getElementById('io-copy-btn').style.display = 'inline-block';
-  document.getElementById('io-apply-btn').style.display = 'none';
+  txt.select(); 
 }
 
-function prepImport() {
-  const wrap = document.getElementById('io-wrap');
-  const txt = document.getElementById('io-txt');
-  
-  wrap.style.display = 'block';
-  txt.value = '';
-  txt.readOnly = false;
-  txt.placeholder = 'Paste short save string here...';
-  document.getElementById('io-copy-btn').style.display = 'none';
-  document.getElementById('io-apply-btn').style.display = 'inline-block';
+function closeIO() {
+  document.getElementById('io-overlay').style.display = 'none';
+}
+
+function ioOutside(e) {
+  if(e.target.id === 'io-overlay') closeIO();
 }
 
 function execCopy() {
@@ -953,14 +969,12 @@ async function execImport() {
     selectedOverrides = {}; 
 
     await saveDone();
-    
-    // Reverse sync order: Apply the newly parsed filters BEFORE triggering a save
     applyPath(); 
     savePaths();
     
     renderAll();
     if (document.getElementById('overlay').style.display !== 'none') renderCL();
-    document.getElementById('io-wrap').style.display = 'none';
+    closeIO();
     
     alert("Import successful!");
   } catch(e) {
@@ -1411,12 +1425,11 @@ function setupDragScroll() {
     if (!isDown) return;
     e.preventDefault();
     const x = e.pageX - slider.offsetLeft;
-    const walk = (x - startX) * 1.5; // Drag speed multiplier
+    const walk = (x - startX) * 1.5; 
     if (Math.abs(walk) > 3) window.isDragging = true; 
     slider.scrollLeft = scrollLeft - walk;
   });
   
-  // Intercept and stop accidental button clicks when intentionally dragging
   slider.addEventListener('click', (e) => {
     if (window.isDragging) {
       e.preventDefault();
