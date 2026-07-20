@@ -55,7 +55,7 @@
   .tog.t-Turf.on .dot{background:#4ade80}.tog.t-Dirt.on .dot{background:#fbbf24}
 
   /* TABS ROW & BREAKDOWN BAR */
-  .tabs-row{display:flex;align-items:center;gap:15px;margin-bottom:15px;border-bottom:2px solid #1e2235;padding-bottom:15px;flex-wrap:nowrap;transition:all 0.2s}
+  .tabs-row{display:flex;align-items:center;gap:15px;margin-bottom:15px;border-bottom:2px solid #1e2235;padding-bottom:15px;flex-wrap:wrap;transition:all 0.2s}
   .tabs{display:flex;gap:8px;overflow-x:auto;flex:1 1 auto;min-width:0;padding-top:10px;padding-bottom:5px;margin-top:-10px;scrollbar-width:none;-ms-overflow-style:none;}
   .tabs::-webkit-scrollbar{display:none;}
   .tab-wrapper{position:relative;display:inline-flex;}
@@ -207,8 +207,8 @@
     .dropdown-item { font-size: 11.5px; padding: 5px 8px; }
   }
 
-  /* MOBILE LAYOUT (Max width 768px) */
-  @media (max-width: 768px) {
+  /* MOBILE LAYOUT (Max width 1000px) */
+  @media (max-width: 1000px) {
     .app { padding: 8px; }
     .logo { font-size: 22px; width: 100%; text-align: center; margin-bottom: 5px; }
     .spacer { display: none; }
@@ -217,6 +217,7 @@
     .ts-v { font-size: 18px; }
     .ts-l { font-size: 11.5px; }
     .tbtn { font-size: 13.5px; padding: 6px 10px; flex: 1; text-align: center; }
+    .tbtn-kofi { justify-content: center; }
     
     /* Force Aptitude Filters to stay on one row */
     .filters { justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; width: 100%; padding-bottom: 4px; }
@@ -342,7 +343,7 @@
 
 <div class="app">
   <div class="top-bar">
-    <div class="logo">UMA<span>SCHEDULER</span></div>
+    <div class="logo">🏇 UMA<span>SCHEDULER</span></div>
     <button class="tbtn tbtn-theme" id="theme-btn" onclick="toggleTheme()">Light Mode</button>
     <a href="https://ko-fi.com/doodush" target="_blank" class="tbtn tbtn-kofi">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 7.324-.022 11.822c.164 2.424 2.586 2.672 2.586 2.672s8.267-.023 11.966-.049c2.438-.426 2.683-2.566 2.658-3.734 4.352.24 7.422-2.831 6.649-6.916zm-11.062 3.511c-1.246 1.453-4.011 3.976-4.011 3.976s-.121.119-.31.023c-.076-.057-.108-.09-.108-.09-.443-.441-3.368-3.049-4.034-3.954-.709-.965-1.041-2.7-.091-3.71.951-1.01 3.005-1.086 4.363.407 0 0 1.565-1.782 3.468-.963 1.904.82 1.832 3.011.723 4.311zm6.173.478c-.928.116-1.682.028-1.682.028V7.284h1.77s1.971.551 1.971 2.638c0 1.913-.985 2.667-2.059 3.015z" fill="currentColor"/></svg>
@@ -446,7 +447,7 @@
     </div>
     <div style="padding:20px;">
       <div class="io-help-txt">Copy the text below to export your data, or paste a save string and click "Import" to load.</div>
-      <textarea id="io-txt" rows="6"></textarea>
+      <textarea id="io-txt" rows="10"></textarea>
       <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:15px;">
         <button class="smbtn" onclick="execCopy()" id="io-copy-btn">Copy to clipboard</button>
         <button class="smbtn" style="background:#065f46; border-color:#047857; color:#a7f3d0" onclick="execImport()" id="io-apply-btn">Import</button>
@@ -971,6 +972,34 @@ async function execImport() {
     await saveDone();
     applyPath(); 
     savePaths();
+    
+    // Prune empty plans if import led to obsolete/trailing empty plans
+    computeAllSchedules(); // Force calculation of pathRaceCounts
+    let pkeys = Object.keys(paths).map(Number).sort((a,b)=>a-b);
+    let pathsModified = false;
+    
+    for (let pid of pkeys) {
+      if (pathRaceCounts[pid] === 0 && Object.keys(paths).length > 1) {
+        delete paths[pid];
+        pathsModified = true;
+      }
+    }
+    
+    if (pathsModified) {
+      let newPaths = {};
+      let newId = 1;
+      let newCurr = 1;
+      let sortedRemaining = Object.keys(paths).map(Number).sort((a,b)=>a-b);
+      for(let oldId of sortedRemaining) {
+        newPaths[newId] = paths[oldId];
+        if (oldId === currentPath) newCurr = newId;
+        newId++;
+      }
+      paths = newPaths;
+      currentPath = paths[newCurr] ? newCurr : 1;
+      savePaths();
+      applyPath();
+    }
     
     renderAll();
     if (document.getElementById('overlay').style.display !== 'none') renderCL();
