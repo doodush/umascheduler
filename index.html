@@ -54,7 +54,7 @@
   .t-Turf .dot{background:#4ade80}.t-Dirt .dot{background:#fbbf24}
   .tog.t-Turf.on .dot{background:#4ade80}.tog.t-Dirt.on .dot{background:#fbbf24}
 
-  /* TABS ROW & BREAKDOWN BAR  */
+  /* TABS ROW & BREAKDOWN BAR */
   .tabs-row{display:flex;align-items:center;gap:15px;margin-bottom:15px;border-bottom:2px solid #1e2235;padding-bottom:15px;flex-wrap:wrap;transition:all 0.2s}
   .tabs{display:flex;gap:8px;overflow-x:auto;flex:1 1 auto;min-width:0;padding-top:10px;padding-bottom:5px;margin-top:-10px;scrollbar-width:none;-ms-overflow-style:none;}
   .tabs::-webkit-scrollbar{display:none;}
@@ -874,32 +874,45 @@ function tf(el){
 }
 
 /* =======================================================
-   NEW LIGHTWEIGHT COMPRESSION EXPORT ENGINE & UNIFIED MODAL
+   CUSTOM V2 COMPRESSION EXPORT ENGINE
+   Drops Base64/JSON to radically shorten string size.
 ======================================================= */
 function openIO() {
+  // 1. Compile Done Hashes
   const dStr = [...done].map(id => exportMap[id] || '').join('');
   
+  // 2. Compile Compressed Path Data
   const pArr = [];
   const sortedPaths = Object.keys(paths).map(Number).sort((a,b)=>a-b);
   for (let pid of sortedPaths) {
     let a = paths[pid].apt.map(x => x === 'Medium' ? 'E' : x[0]).join(''); 
     let t = paths[pid].track.map(x => x[0]).join('');
-    pArr.push(`${pid}:${a}|${t}`); 
+    
+    let oStr = '';
+    let pOverrides = paths[pid].overrides || {};
+    for (let k in pOverrides) {
+      let parts = k.split('-');
+      // Compress y-m-s slot into 2-char Base36 code
+      let slotCode = ((parseInt(parts[0])-1)*24 + (parseInt(parts[1])-1)*2 + (parseInt(parts[2])-1)).toString(36).padStart(2,'0');
+      let rid = pOverrides[k];
+      let hash = rid === 'none' ? '00000' : (exportMap[rid] || '00000');
+      oStr += slotCode + hash;
+    }
+    
+    pArr.push(`${a}|${t}|${oStr}`);
   }
   
-  const data = {
-    d: dStr,
-    p: pArr.join(';'),
-    c: currentPath,
-    mc: document.getElementById('max-consec').value,
-    mt: document.getElementById('consec-toggle').checked
-  };
+  // 3. Compile Settings 
+  const mc = document.getElementById('max-consec').value || '';
+  const mt = document.getElementById('consec-toggle').checked ? 1 : 0;
+  const setStr = `${currentPath},${mc},${mt}`;
+
+  // Assemble V2 String
+  const finalStr = `v2!${dStr}~${pArr.join(';')}~${setStr}`;
   
-  const str = btoa(JSON.stringify(data));
   const txt = document.getElementById('io-txt');
-  
   document.getElementById('io-overlay').style.display = 'flex';
-  txt.value = str;
+  txt.value = finalStr;
   txt.select(); 
 }
 
@@ -921,54 +934,122 @@ function execCopy() {
 async function execImport() {
   let str = document.getElementById('io-txt').value;
   if (!str) return;
+  str = str.trim().replace(/\s/g, ''); 
+  
   try {
-    str = str.trim().replace(/\s/g, ''); 
-    const data = JSON.parse(atob(str));
-    
-    if (data.d !== undefined) {
+    if (str.startsWith('v2!')) {
+      // --- NEW V2 FORMAT (Ultra-Compressed w/ Overrides) ---
+      let parts = str.substring(3).split('~');
+      let dStr = parts[0] || '';
+      let pStr = parts[1] || '';
+      let setStr = parts[2] || '';
+
+      // Parse Done
       done = new Set();
-      for (let i = 0; i < data.d.length; i += 5) {
-        let h = data.d.substring(i, i+5);
+      for (let i = 0; i < dStr.length; i += 5) {
+        let h = dStr.substring(i, i+5);
         if (importMap[h]) done.add(importMap[h]);
       }
-    }
-    
-    if (data.p) {
-       const newPaths = {};
-       const pArr = data.p.split(';');
-       pArr.forEach((x, index) => {
-         let pid = index + 1;
-         let filterStr = x;
-         if (x.includes(':')) {
-           const parts = x.split(':');
-           pid = parseInt(parts[0]);
-           filterStr = parts[1];
-         }
-         
-         let parts = filterStr.split('|');
-         let aRaw = parts[0] || '';
-         let tRaw = parts[1] || '';
-         newPaths[pid] = {
-           apt: aRaw.split('').map(y => y==='S'?'Sprint' : y==='M'?'Mile' : y==='E'?'Medium' : 'Long'),
-           track: tRaw.split('').map(y => y==='T'?'Turf' : 'Dirt'),
-           overrides: {} 
-         };
-       });
-       paths = newPaths;
-    }
-    
-    if (data.mc !== undefined) {
-      document.getElementById('max-consec').value = data.mc;
-      document.getElementById('consec-toggle').checked = !!data.mt;
-      saveMaxConsec();
-      toggleMaxConsecUI();
-    }
-    
-    if (data.c && paths[data.c]) currentPath = data.c;
-    else currentPath = Object.keys(paths).length > 0 ? Number(Object.keys(paths)[0]) : 1;
-    
-    selectedOverrides = {}; 
 
+      // Parse Plans
+      let newPaths = {};
+      if (pStr) {
+        let plans = pStr.split(';');
+        plans.forEach((p, idx) => {
+          let pid = idx + 1;
+          let pParts = p.split('|');
+          let aRaw = pParts[0] || '';
+          let tRaw = pParts[1] || '';
+          let oRaw = pParts[2] || '';
+
+          let overrides = {};
+          for (let i = 0; i < oRaw.length; i += 7) {
+            let sc = oRaw.substring(i, i+2);
+            let h = oRaw.substring(i+2, i+7);
+            
+            let val = parseInt(sc, 36);
+            let s = (val % 2) + 1;
+            let m = Math.floor((val / 2) % 12) + 1;
+            let y = Math.floor(val / 24) + 1;
+            let key = `${y}-${m}-${s}`;
+
+            if (h === '00000') {
+              overrides[key] = 'none';
+            } else if (importMap[h]) {
+              overrides[key] = importMap[h];
+            }
+          }
+
+          newPaths[pid] = {
+            apt: aRaw.split('').map(y => y==='S'?'Sprint' : y==='M'?'Mile' : y==='E'?'Medium' : 'Long'),
+            track: tRaw.split('').map(y => y==='T'?'Turf' : 'Dirt'),
+            overrides: overrides 
+          };
+        });
+      }
+      paths = Object.keys(newPaths).length > 0 ? newPaths : { 1: { apt: ['Sprint','Mile','Medium','Long'], track: ['Turf','Dirt'], overrides: {} } };
+
+      // Parse Settings
+      if (setStr) {
+        let sParts = setStr.split(',');
+        currentPath = parseInt(sParts[0]) || 1;
+        if (!paths[currentPath]) currentPath = Object.keys(paths).length > 0 ? Number(Object.keys(paths)[0]) : 1;
+        
+        document.getElementById('max-consec').value = sParts[1] || '';
+        document.getElementById('consec-toggle').checked = (sParts[2] === '1');
+        saveMaxConsec();
+        toggleMaxConsecUI();
+      }
+
+    } else {
+      // --- OLD V1 FORMAT (Legacy JSON/Base64 Fallback) ---
+      const data = JSON.parse(atob(str));
+      
+      if (data.d !== undefined) {
+        done = new Set();
+        for (let i = 0; i < data.d.length; i += 5) {
+          let h = data.d.substring(i, i+5);
+          if (importMap[h]) done.add(importMap[h]);
+        }
+      }
+      
+      if (data.p) {
+         const newPaths = {};
+         const pArr = data.p.split(';');
+         pArr.forEach((x, index) => {
+           let pid = index + 1;
+           let filterStr = x;
+           if (x.includes(':')) {
+             const parts = x.split(':');
+             pid = parseInt(parts[0]);
+             filterStr = parts[1];
+           }
+           
+           let parts = filterStr.split('|');
+           let aRaw = parts[0] || '';
+           let tRaw = parts[1] || '';
+           newPaths[pid] = {
+             apt: aRaw.split('').map(y => y==='S'?'Sprint' : y==='M'?'Mile' : y==='E'?'Medium' : 'Long'),
+             track: tRaw.split('').map(y => y==='T'?'Turf' : 'Dirt'),
+             overrides: {} 
+           };
+         });
+         paths = newPaths;
+      }
+      
+      if (data.mc !== undefined) {
+        document.getElementById('max-consec').value = data.mc;
+        document.getElementById('consec-toggle').checked = !!data.mt;
+        saveMaxConsec();
+        toggleMaxConsecUI();
+      }
+      
+      if (data.c && paths[data.c]) currentPath = data.c;
+      else currentPath = Object.keys(paths).length > 0 ? Number(Object.keys(paths)[0]) : 1;
+    }
+    
+    // Cleanup and save imported state
+    selectedOverrides = {}; 
     await saveDone();
     applyPath(); 
     savePaths();
@@ -1007,6 +1088,7 @@ async function execImport() {
     
     alert("Import successful!");
   } catch(e) {
+    console.error(e);
     alert("Failed to import. Invalid save string.");
   }
 }
