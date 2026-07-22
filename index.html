@@ -79,7 +79,11 @@
   .bd-title{font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;padding:3px 8px;border-radius:4px;color:#000;letter-spacing:0.05em;text-align:center;width:100%}
   .turf-group .bd-title{background:#4ade80;color:#064e3b}
   .dirt-group .bd-title{background:#fbbf24;color:#78350f}
-  .bd-item{display:flex;flex-direction:row;align-items:center;justify-content:center;font-size:13px;color:#aab;font-weight:500;transition:color 0.2s;width:100%}
+  .bd-item{display:flex;flex-direction:row;align-items:center;justify-content:center;font-size:13px;color:#aab;font-weight:500;transition:all 0.2s;width:100%; cursor:pointer; position:relative; padding:2px 0; user-select:none;}
+  .bd-item:hover{background:#1e2235; border-radius:4px;}
+  .bd-item::after{content:''; position:absolute; bottom:0px; left:10%; width:80%; height:2px; background:#4ade80; transform:scaleX(0); transition:transform 0.2s ease-out; border-radius:2px;}
+  .dirt-group .bd-item::after{background:#fbbf24;}
+  .bd-item.prio-active::after{transform:scaleX(1);}
   .bd-item b{color:#fff;font-size:15.5px;font-weight:700;margin-left:5px;transition:color 0.2s}
 
   /* YEARS GRID (Scaled 150%) */
@@ -282,6 +286,7 @@
 
   body.light-theme .top-stats, body.light-theme .bd-group, body.light-theme .year-col, body.light-theme .modal, body.light-theme .modal-tools input, body.light-theme .modal-tools select, body.light-theme .smbtn { background: #ffffff; border-color: #cbd5e1; color: #0f172a; }
   body.light-theme .bd-item { color: #475569; }
+  body.light-theme .bd-item:hover { background: #f1f5f9; }
   body.light-theme .bd-item b { color: #0f172a; }
 
   body.light-theme .bottom-tools { background: #ffffff; border-color: #cbd5e1; }
@@ -380,17 +385,17 @@
     <div class="breakdown-bar" id="breakdown-bar">
       <div class="bd-group turf-group">
         <span class="bd-title">TURF</span>
-        <span class="bd-item">Sprint: <b id="bd-turf-Sprint">0</b></span>
-        <span class="bd-item">Mile: <b id="bd-turf-Mile">0</b></span>
-        <span class="bd-item">Medium: <b id="bd-turf-Medium">0</b></span>
-        <span class="bd-item">Long: <b id="bd-turf-Long">0</b></span>
+        <span class="bd-item" id="bdi-Turf-Sprint" onclick="togglePrio('Turf','Sprint')">Sprint: <b id="bd-turf-Sprint">0</b></span>
+        <span class="bd-item" id="bdi-Turf-Mile" onclick="togglePrio('Turf','Mile')">Mile: <b id="bd-turf-Mile">0</b></span>
+        <span class="bd-item" id="bdi-Turf-Medium" onclick="togglePrio('Turf','Medium')">Medium: <b id="bd-turf-Medium">0</b></span>
+        <span class="bd-item" id="bdi-Turf-Long" onclick="togglePrio('Turf','Long')">Long: <b id="bd-turf-Long">0</b></span>
       </div>
       <div class="bd-group dirt-group">
         <span class="bd-title">DIRT</span>
-        <span class="bd-item">Sprint: <b id="bd-dirt-Sprint">0</b></span>
-        <span class="bd-item">Mile: <b id="bd-dirt-Mile">0</b></span>
-        <span class="bd-item">Medium: <b id="bd-dirt-Medium">0</b></span>
-        <span class="bd-item">Long: <b id="bd-dirt-Long">0</b></span>
+        <span class="bd-item" id="bdi-Dirt-Sprint" onclick="togglePrio('Dirt','Sprint')">Sprint: <b id="bd-dirt-Sprint">0</b></span>
+        <span class="bd-item" id="bdi-Dirt-Mile" onclick="togglePrio('Dirt','Mile')">Mile: <b id="bd-dirt-Mile">0</b></span>
+        <span class="bd-item" id="bdi-Dirt-Medium" onclick="togglePrio('Dirt','Medium')">Medium: <b id="bd-dirt-Medium">0</b></span>
+        <span class="bd-item" id="bdi-Dirt-Long" onclick="togglePrio('Dirt','Long')">Long: <b id="bd-dirt-Long">0</b></span>
       </div>
     </div>
     
@@ -660,17 +665,18 @@ const MAX_CONSEC_TOGGLE_KEY='uma_max_consec_toggle_v1';
 
 let done=new Set();
 
-// Default paths object
+// Default paths object now includes priorities array
 let paths = {
-  1: { apt: ['Sprint','Mile','Medium','Long'], track: ['Turf','Dirt'], overrides: {} },
-  2: { apt: ['Sprint','Mile','Medium','Long'], track: ['Turf','Dirt'], overrides: {} },
-  3: { apt: ['Sprint','Mile','Medium','Long'], track: ['Turf','Dirt'], overrides: {} }
+  1: { apt: ['Sprint','Mile','Medium','Long'], track: ['Turf','Dirt'], overrides: {}, priorities: [] },
+  2: { apt: ['Sprint','Mile','Medium','Long'], track: ['Turf','Dirt'], overrides: {}, priorities: [] },
+  3: { apt: ['Sprint','Mile','Medium','Long'], track: ['Turf','Dirt'], overrides: {}, priorities: [] }
 };
 let currentPath = 1;
 
 let activeApt=new Set();
 let activeTrack=new Set();
 let selectedOverrides={};
+let activePriorities=new Set();
 let isLightMode = false;
 
 let pathRaceCounts = {};
@@ -738,7 +744,7 @@ function loadPaths() {
       paths = JSON.parse(savedPaths);
     } 
     if (!paths || Object.keys(paths).length === 0) {
-      paths = { 1: { apt: ['Sprint','Mile','Medium','Long'], track: ['Turf','Dirt'], overrides: {} } };
+      paths = { 1: { apt: ['Sprint','Mile','Medium','Long'], track: ['Turf','Dirt'], overrides: {}, priorities: [] } };
     }
     const savedCurr = localStorage.getItem(CURRENT_PATH_KEY);
     if (savedCurr && paths[savedCurr]) currentPath = parseInt(savedCurr);
@@ -751,6 +757,7 @@ function savePaths() {
   paths[currentPath].apt = [...activeApt];
   paths[currentPath].track = [...activeTrack];
   paths[currentPath].overrides = selectedOverrides;
+  paths[currentPath].priorities = [...activePriorities];
   
   try {
     localStorage.setItem(PATHS_KEY, JSON.stringify(paths));
@@ -797,7 +804,7 @@ function addPath() {
   savePaths();
   const sortedPaths = Object.keys(paths).map(Number).sort((a,b)=>a-b);
   const newId = sortedPaths[sortedPaths.length - 1] + 1;
-  paths[newId] = { apt: ['Sprint','Mile','Medium','Long'], track: ['Turf','Dirt'], overrides: {} };
+  paths[newId] = { apt: ['Sprint','Mile','Medium','Long'], track: ['Turf','Dirt'], overrides: {}, priorities: [] };
   try { localStorage.setItem(PATHS_KEY, JSON.stringify(paths)); } catch(e) {}
   switchPath(newId);
 }
@@ -818,7 +825,7 @@ function executePathDeletion(pid) {
   }
 
   if (Object.keys(newPaths).length === 0) {
-    newPaths[1] = { apt: ['Sprint','Mile','Medium','Long'], track: ['Turf','Dirt'], overrides: {} };
+    newPaths[1] = { apt: ['Sprint','Mile','Medium','Long'], track: ['Turf','Dirt'], overrides: {}, priorities: [] };
     newCurrentPath = 1;
   } else if (currentPath === pid) {
     newCurrentPath = (pid > 1) ? (pid - 1) : 1;
@@ -844,6 +851,7 @@ function applyPath() {
   activeApt = new Set(p.apt);
   activeTrack = new Set(p.track);
   selectedOverrides = p.overrides || {};
+  activePriorities = new Set(p.priorities || []);
 
   document.querySelectorAll('.tog').forEach(el => {
     const f = el.dataset.f, v = el.dataset.v;
@@ -851,6 +859,12 @@ function applyPath() {
     if (s.has(v)) el.classList.add('on');
     else el.classList.remove('on');
   });
+
+  document.querySelectorAll('.bd-item').forEach(el => el.classList.remove('prio-active'));
+  for (let pr of activePriorities) {
+    let el = document.getElementById(`bdi-${pr}`);
+    if (el) el.classList.add('prio-active');
+  }
 }
 
 function tf(el){
@@ -873,15 +887,26 @@ function tf(el){
   renderAll();
 }
 
+// New handler for breakdown Priority clicks
+function togglePrio(track, apt) {
+  const key = `${track}-${apt}`;
+  if (activePriorities.has(key)) {
+    activePriorities.delete(key);
+    document.getElementById(`bdi-${key}`).classList.remove('prio-active');
+  } else {
+    activePriorities.add(key);
+    document.getElementById(`bdi-${key}`).classList.add('prio-active');
+  }
+  savePaths();
+  renderAll();
+}
+
 /* =======================================================
-   CUSTOM V2 COMPRESSION EXPORT ENGINE
-   Drops Base64/JSON to radically shorten string size.
+   CUSTOM V2 COMPRESSION EXPORT ENGINE (Now with Priorities)
 ======================================================= */
 function openIO() {
-  // 1. Compile Done Hashes
   const dStr = [...done].map(id => exportMap[id] || '').join('');
   
-  // 2. Compile Compressed Path Data
   const pArr = [];
   const sortedPaths = Object.keys(paths).map(Number).sort((a,b)=>a-b);
   for (let pid of sortedPaths) {
@@ -892,22 +917,24 @@ function openIO() {
     let pOverrides = paths[pid].overrides || {};
     for (let k in pOverrides) {
       let parts = k.split('-');
-      // Compress y-m-s slot into 2-char Base36 code
       let slotCode = ((parseInt(parts[0])-1)*24 + (parseInt(parts[1])-1)*2 + (parseInt(parts[2])-1)).toString(36).padStart(2,'0');
       let rid = pOverrides[k];
       let hash = rid === 'none' ? '00000' : (exportMap[rid] || '00000');
       oStr += slotCode + hash;
     }
+
+    let prioStr = (paths[pid].priorities || []).map(pr => {
+      let parts = pr.split('-');
+      return (parts[0][0] === 'T' ? 'T' : 'D') + (parts[1][0] === 'M' ? (parts[1] === 'Mile' ? 'M' : 'E') : parts[1][0]);
+    }).join('');
     
-    pArr.push(`${a}|${t}|${oStr}`);
+    pArr.push(`${a}|${t}|${oStr}|${prioStr}`);
   }
   
-  // 3. Compile Settings 
   const mc = document.getElementById('max-consec').value || '';
   const mt = document.getElementById('consec-toggle').checked ? 1 : 0;
   const setStr = `${currentPath},${mc},${mt}`;
 
-  // Assemble V2 String
   const finalStr = `v2!${dStr}~${pArr.join(';')}~${setStr}`;
   
   const txt = document.getElementById('io-txt');
@@ -938,20 +965,17 @@ async function execImport() {
   
   try {
     if (str.startsWith('v2!')) {
-      // --- NEW V2 FORMAT (Ultra-Compressed w/ Overrides) ---
       let parts = str.substring(3).split('~');
       let dStr = parts[0] || '';
       let pStr = parts[1] || '';
       let setStr = parts[2] || '';
 
-      // Parse Done
       done = new Set();
       for (let i = 0; i < dStr.length; i += 5) {
         let h = dStr.substring(i, i+5);
         if (importMap[h]) done.add(importMap[h]);
       }
 
-      // Parse Plans
       let newPaths = {};
       if (pStr) {
         let plans = pStr.split(';');
@@ -961,40 +985,43 @@ async function execImport() {
           let aRaw = pParts[0] || '';
           let tRaw = pParts[1] || '';
           let oRaw = pParts[2] || '';
+          let prioRaw = pParts[3] || '';
 
           let overrides = {};
           for (let i = 0; i < oRaw.length; i += 7) {
             let sc = oRaw.substring(i, i+2);
             let h = oRaw.substring(i+2, i+7);
-            
             let val = parseInt(sc, 36);
             let s = (val % 2) + 1;
             let m = Math.floor((val / 2) % 12) + 1;
             let y = Math.floor(val / 24) + 1;
             let key = `${y}-${m}-${s}`;
+            if (h === '00000') overrides[key] = 'none';
+            else if (importMap[h]) overrides[key] = importMap[h];
+          }
 
-            if (h === '00000') {
-              overrides[key] = 'none';
-            } else if (importMap[h]) {
-              overrides[key] = importMap[h];
-            }
+          let priorities = [];
+          for (let i = 0; i < prioRaw.length; i += 2) {
+            let trk = prioRaw[i] === 'T' ? 'Turf' : 'Dirt';
+            let aptChar = prioRaw[i+1];
+            let apt = aptChar === 'S' ? 'Sprint' : (aptChar === 'M' ? 'Mile' : (aptChar === 'E' ? 'Medium' : 'Long'));
+            priorities.push(`${trk}-${apt}`);
           }
 
           newPaths[pid] = {
             apt: aRaw.split('').map(y => y==='S'?'Sprint' : y==='M'?'Mile' : y==='E'?'Medium' : 'Long'),
             track: tRaw.split('').map(y => y==='T'?'Turf' : 'Dirt'),
-            overrides: overrides 
+            overrides: overrides,
+            priorities: priorities
           };
         });
       }
-      paths = Object.keys(newPaths).length > 0 ? newPaths : { 1: { apt: ['Sprint','Mile','Medium','Long'], track: ['Turf','Dirt'], overrides: {} } };
+      paths = Object.keys(newPaths).length > 0 ? newPaths : { 1: { apt: ['Sprint','Mile','Medium','Long'], track: ['Turf','Dirt'], overrides: {}, priorities: [] } };
 
-      // Parse Settings
       if (setStr) {
         let sParts = setStr.split(',');
         currentPath = parseInt(sParts[0]) || 1;
         if (!paths[currentPath]) currentPath = Object.keys(paths).length > 0 ? Number(Object.keys(paths)[0]) : 1;
-        
         document.getElementById('max-consec').value = sParts[1] || '';
         document.getElementById('consec-toggle').checked = (sParts[2] === '1');
         saveMaxConsec();
@@ -1002,9 +1029,8 @@ async function execImport() {
       }
 
     } else {
-      // --- OLD V1 FORMAT (Legacy JSON/Base64 Fallback) ---
+      // Legacy Fallback
       const data = JSON.parse(atob(str));
-      
       if (data.d !== undefined) {
         done = new Set();
         for (let i = 0; i < data.d.length; i += 5) {
@@ -1012,7 +1038,6 @@ async function execImport() {
           if (importMap[h]) done.add(importMap[h]);
         }
       }
-      
       if (data.p) {
          const newPaths = {};
          const pArr = data.p.split(';');
@@ -1024,48 +1049,42 @@ async function execImport() {
              pid = parseInt(parts[0]);
              filterStr = parts[1];
            }
-           
            let parts = filterStr.split('|');
            let aRaw = parts[0] || '';
            let tRaw = parts[1] || '';
            newPaths[pid] = {
              apt: aRaw.split('').map(y => y==='S'?'Sprint' : y==='M'?'Mile' : y==='E'?'Medium' : 'Long'),
              track: tRaw.split('').map(y => y==='T'?'Turf' : 'Dirt'),
-             overrides: {} 
+             overrides: {},
+             priorities: []
            };
          });
          paths = newPaths;
       }
-      
       if (data.mc !== undefined) {
         document.getElementById('max-consec').value = data.mc;
         document.getElementById('consec-toggle').checked = !!data.mt;
         saveMaxConsec();
         toggleMaxConsecUI();
       }
-      
       if (data.c && paths[data.c]) currentPath = data.c;
       else currentPath = Object.keys(paths).length > 0 ? Number(Object.keys(paths)[0]) : 1;
     }
     
-    // Cleanup and save imported state
     selectedOverrides = {}; 
     await saveDone();
     applyPath(); 
     savePaths();
     
-    // Prune empty plans if import led to obsolete/trailing empty plans
-    computeAllSchedules(); // Force calculation of pathRaceCounts
+    computeAllSchedules(); 
     let pkeys = Object.keys(paths).map(Number).sort((a,b)=>a-b);
     let pathsModified = false;
-    
     for (let pid of pkeys) {
       if (pathRaceCounts[pid] === 0 && Object.keys(paths).length > 1) {
         delete paths[pid];
         pathsModified = true;
       }
     }
-    
     if (pathsModified) {
       let newPaths = {};
       let newId = 1;
@@ -1194,6 +1213,7 @@ function computeAllSchedules() {
     let pApt = new Set(paths[pid].apt || []);
     let pTrack = new Set(paths[pid].track || []);
     let pOverrides = paths[pid].overrides || {};
+    let pPriorities = new Set(paths[pid].priorities || []);
     
     if (pid === currentPath) {
       for (const r of races) {
@@ -1212,7 +1232,7 @@ function computeAllSchedules() {
       pTrack.has(r.track)
     );
     
-    let sm = computePlanSchedule(pAvailable, pOverrides);
+    let sm = computePlanSchedule(pAvailable, pOverrides, pPriorities);
     schedules[pid] = sm;
     
     let assignedIds = new Set();
@@ -1249,7 +1269,7 @@ function computeAllSchedules() {
   return schedules;
 }
 
-function computePlanSchedule(availableRaces, overrides){
+function computePlanSchedule(availableRaces, overrides, priorities){
   const sm = {};
   
   for(let y=1; y<=3; y++){
@@ -1289,16 +1309,25 @@ function computePlanSchedule(availableRaces, overrides){
   for (const k in sm) {
     const y = parseInt(k.split('-')[0]);
     sm[k].sort((a, b) => {
+      // 1. Manual Overrides Top Priority
       const aOverride = overrides[k] === a.id;
       const bOverride = overrides[k] === b.id;
       if (aOverride && !bOverride) return -1;
       if (!aOverride && bOverride) return 1;
 
+      // 2. Year Targeting
       const aTarget = !a.multi || a.targetYear === y;
       const bTarget = !b.multi || b.targetYear === y;
       if (aTarget && !bTarget) return -1;
       if (!aTarget && bTarget) return 1;
+      
+      // 3. User Filter Priority Flags
+      const aPrio = priorities.has(`${a.track}-${a.apt}`);
+      const bPrio = priorities.has(`${b.track}-${b.apt}`);
+      if (aPrio && !bPrio) return -1;
+      if (!aPrio && bPrio) return 1;
 
+      // 4. Default Sort Fallback
       return a.grade.localeCompare(b.grade) || a.insertOrder - b.insertOrder;
     });
   }
@@ -1351,7 +1380,7 @@ function renderAll(){
           if (mainRace) {
             const isOverride = (selectedOverrides[k] === mainRace.id);
             if (!isOverride && consec >= maxConsec) {
-              mainRace = null; // Auto-scheduler is blocked due to consecutive limits
+              mainRace = null; 
             }
           }
           
@@ -1386,7 +1415,6 @@ function renderAll(){
 function renderCard(m, s, opts, slotKey, mainRace, y){
   const label=`${SL_LBL[s-1]} ${MONTHS[m-1]}`;
   
-  // Disable Early Junior Year Slots
   const isJuniorDisabled = (y === 1 && (m < 7 || (m === 7 && s === 1)));
   if (isJuniorDisabled) {
     return `<div class="card card-disabled">
