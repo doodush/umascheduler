@@ -282,7 +282,7 @@
   body.light-theme .tab.empty { color: #d97706; border-color: #fcd34d; border-style: dashed; }
   body.light-theme .tab.empty.active { background: #f59e0b; color: #fff; border-color: #d97706; border-style: solid; }
   body.light-theme .tab.empty:hover:not(.active) { background: #fef3c7; color: #b45309; }
-  body.light-theme .tab-add.disabled { background: #f1f5f9; border-color: #cbd5e1; color: #94a3b8; }
+  body.light-theme .tab.add.disabled { background: #f1f5f9; border-color: #cbd5e1; color: #94a3b8; }
 
   body.light-theme .top-stats, body.light-theme .bd-group, body.light-theme .year-col, body.light-theme .modal, body.light-theme .modal-tools input, body.light-theme .modal-tools select, body.light-theme .smbtn { background: #ffffff; border-color: #cbd5e1; color: #0f172a; }
   body.light-theme .bd-item { color: #475569; }
@@ -1117,17 +1117,32 @@ async function completeSchedule() {
   const sm = schedules[currentPath];
   const scheduledIds = [];
   
+  let isConsecEnabled = document.getElementById('consec-toggle')?.checked;
+  let maxConsec = isConsecEnabled ? parseInt(document.getElementById('max-consec')?.value) : 999;
+  if (isNaN(maxConsec) || maxConsec < 1) maxConsec = 999;
+
+  let consec = 0;
+  
   for(let y=1; y<=3; y++) {
     for(let m=1; m<=12; m++) {
       for(let s=1; s<=2; s++) {
         const k = `${y}-${m}-${s}`;
         const opts = sm[k];
+        let picked = false;
+
         if (opts && opts.length > 0 && selectedOverrides[k] !== 'none') {
           const candidate = opts[0];
           if (selectedOverrides[k] === candidate.id || !candidate.multi || candidate.targetYear === y) {
-            scheduledIds.push(candidate.id);
+            const isOverride = (selectedOverrides[k] === candidate.id);
+            // Check if it visually gets rendered
+            if (consec < maxConsec || isOverride) {
+              scheduledIds.push(candidate.id);
+              picked = true;
+            }
           }
         }
+
+        if (picked) consec++; else consec = 0;
       }
     }
   }
