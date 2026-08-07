@@ -1250,7 +1250,7 @@ function computeAllSchedules() {
     
     if (pid === currentPath) {
       for (const r of races) {
-        if (!globalConsumed.has(r.id) && (explicitReservations[r.id] === undefined || explicitReservations[r.id] === pid)) {
+        if (!globalConsumed.has(r.id)) {
           let effApt = getEffectiveApt(r, pApt);
           if (currentBreakdownCounts[r.track] && currentBreakdownCounts[r.track][effApt] !== undefined) {
              currentBreakdownCounts[r.track][effApt]++;
