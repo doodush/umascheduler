@@ -877,14 +877,29 @@ function tf(el){
     let rid = selectedOverrides[k];
     if (rid !== 'none') {
        let r = races.find(x => x.id === rid);
-       if (r && (!activeApt.has(r.apt) || !activeTrack.has(r.track))) {
-          delete selectedOverrides[k];
+       if (r) {
+         let rApt = getEffectiveApt(r, activeApt);
+         if (!activeApt.has(rApt) || !activeTrack.has(r.track)) {
+           delete selectedOverrides[k];
+         }
        }
     }
   }
   
   savePaths();
   renderAll();
+}
+
+// Helper function to resolve dynamic aptitudes (e.g. JBC Classic can be Medium or Mile)
+function getEffectiveApt(r, aptSet) {
+  if (r.id === 'JBCClassic') {
+    if (aptSet) {
+      if (aptSet.has('Medium')) return 'Medium';
+      if (aptSet.has('Mile')) return 'Mile';
+    }
+    return 'Medium';
+  }
+  return r.apt;
 }
 
 // New handler for breakdown Priority clicks
@@ -1204,9 +1219,12 @@ function computeAllSchedules() {
         let pApt = new Set(paths[pid].apt || []);
         let pTrack = new Set(paths[pid].track || []);
         
-        if (r && pApt.has(r.apt) && pTrack.has(r.track)) {
-           if (explicitReservations[raceId] === undefined) {
-             explicitReservations[raceId] = parseInt(pid);
+        if (r) {
+           let rApt = getEffectiveApt(r, pApt);
+           if (pApt.has(rApt) && pTrack.has(r.track)) {
+             if (explicitReservations[raceId] === undefined) {
+               explicitReservations[raceId] = parseInt(pid);
+             }
            }
         }
       }
@@ -1233,19 +1251,24 @@ function computeAllSchedules() {
     if (pid === currentPath) {
       for (const r of races) {
         if (!globalConsumed.has(r.id) && (explicitReservations[r.id] === undefined || explicitReservations[r.id] === pid)) {
-          if (currentBreakdownCounts[r.track] && currentBreakdownCounts[r.track][r.apt] !== undefined) {
-             currentBreakdownCounts[r.track][r.apt]++;
+          let effApt = getEffectiveApt(r, pApt);
+          if (currentBreakdownCounts[r.track] && currentBreakdownCounts[r.track][effApt] !== undefined) {
+             currentBreakdownCounts[r.track][effApt]++;
           }
         }
       }
     }
 
-    let pAvailable = races.filter(r => 
-      !globalConsumed.has(r.id) && 
-      (explicitReservations[r.id] === undefined || explicitReservations[r.id] === pid) &&
-      pApt.has(r.apt) && 
-      pTrack.has(r.track)
-    );
+    let pAvailable = races.filter(r => {
+      let effApt = getEffectiveApt(r, pApt);
+      return !globalConsumed.has(r.id) && 
+             (explicitReservations[r.id] === undefined || explicitReservations[r.id] === pid) &&
+             pApt.has(effApt) && 
+             pTrack.has(r.track);
+    }).map(r => {
+      let effApt = getEffectiveApt(r, pApt);
+      return effApt !== r.apt ? { ...r, apt: effApt } : r;
+    });
     
     let sm = computePlanSchedule(pAvailable, pOverrides, pPriorities);
     schedules[pid] = sm;
@@ -1508,8 +1531,9 @@ function renderCL(){
   const ft=document.getElementById('cl-ft').value;
   const fg=document.getElementById('cl-fg').value;
   let vis=races.filter(r=>{
+    let effApt = getEffectiveApt(r, activeApt);
     if(q&&!r.name.toLowerCase().includes(q))return false;
-    if(fa&&r.apt!==fa)return false;
+    if(fa&&effApt!==fa)return false;
     if(ft&&r.track!==ft)return false;
     if(fg&&r.grade!==fg)return false;
     return true;
@@ -1527,12 +1551,13 @@ function renderCL(){
     }
     const ck=done.has(r.id);
     const yrLabel=r.multi?`${MONTHS[r.month-1]} ${SL_LBL[r.slot-1]} (Y2/3)`:r.fixedYear?`Y${r.fixedYear} ${MONTHS[r.month-1]} ${SL_LBL[r.slot-1]}`:'';
+    let effApt = getEffectiveApt(r, activeApt);
     html+=`<div class="cl-item${ck?' ck':''}" onclick="clToggle('${r.id}')">
       <div class="ci-cb${ck?' ck':''}">${ck?'✓':''}</div>
       <span class="grade-badge g${r.grade[1].toLowerCase()}">${r.grade}</span>
       <span class="ci-name">${r.name}</span>
       <span class="ci-date">${yrLabel}</span>
-      <span class="ci-apt"><span class="ctag ctag-${r.apt}">${r.apt}</span></span>
+      <span class="ci-apt"><span class="ctag ctag-${effApt}">${effApt}</span></span>
       <span class="ci-trk"><span class="ctag ctag-${r.track}">${r.track}</span></span>
     </div>`;
   }
